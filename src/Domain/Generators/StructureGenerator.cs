@@ -19,7 +19,7 @@ namespace Domain.Generators
     }
     public static class StructureGenerator
     {
-        private static readonly string EntityFrameworkCoreVersion = "7.0.5";
+        private static readonly string EntityFrameworkCoreVersion = "7.0.10";
 
 
         private static readonly string TargetFramework = "net7.0";
@@ -28,25 +28,25 @@ namespace Domain.Generators
         private static readonly NuGet VisualStudioFormatVersion = new("Microsoft Visual Studio Solution File, Format Version", "12.00");
 
         private static readonly NuGet Swashbuckle = new("Swashbuckle.AspNetCore", "6.5.0");
-        private static readonly NuGet Swashbuckle_Filters = new("Swashbuckle.AspNetCore.Filters", "7.0.6");
-        private static readonly NuGet Serilog = new("Serilog", "2.12.0");
+        private static readonly NuGet Swashbuckle_Filters = new("Swashbuckle.AspNetCore.Filters", "7.0.11");
+        private static readonly NuGet Serilog = new("Serilog", "3.0.1");
         private static readonly NuGet Serilog_Console = new("Serilog.Sinks.Console", "4.1.0");
         private static readonly NuGet AutoMapper = new("AutoMapper", "12.0.1");
 
         private static readonly NuGet EntityFrameworkCore = new("Microsoft.EntityFrameworkCore", EntityFrameworkCoreVersion);
         private static readonly NuGet EntityFrameworkCore_Relational = new("Microsoft.EntityFrameworkCore.Relational", EntityFrameworkCoreVersion);
-        private static readonly NuGet EntityFrameworkCore_DynamicLinq = new("Microsoft.EntityFrameworkCore.DynamicLinq", "7.3.2");
+        private static readonly NuGet EntityFrameworkCore_DynamicLinq = new("Microsoft.EntityFrameworkCore.DynamicLinq", "7.3.4");
         private static readonly NuGet EntityFrameworkCore_InMemory = new("Microsoft.EntityFrameworkCore.InMemory", EntityFrameworkCoreVersion);
-        private static readonly NuGet EntityFrameworkCore_PostgreSQL = new("Npgsql.EntityFrameworkCore.PostgreSQL", "7.0.1");
+        private static readonly NuGet EntityFrameworkCore_PostgreSQL = new("Npgsql.EntityFrameworkCore.PostgreSQL", "7.0.4");
         private static readonly NuGet EntityFrameworkCore_HealthChecks = new("Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore", EntityFrameworkCoreVersion);
 
-        private static readonly NuGet Moq = new("Moq", "4.18.4");
-        private static readonly NuGet XUnit = new("xunit", "2.4.2");
-        private static readonly NuGet XUnit_Runner = new("xunit.runner.visualstudio", "2.4.5");
+        private static readonly NuGet Moq = new("Moq", "4.20.69");
+        private static readonly NuGet XUnit = new("xunit", "2.5.0");
+        private static readonly NuGet XUnit_Runner = new("xunit.runner.visualstudio", "2.5.0");
 
         private static readonly NuGet Coverlet = new("coverlet.collector", "6.0.0");
         private static readonly NuGet Coverlet_Build = new("coverlet.msbuild", "6.0.0");
-        private static readonly NuGet Test_SDK = new("Microsoft.NET.Test.Sdk", "17.6.0");
+        private static readonly NuGet Test_SDK = new("Microsoft.NET.Test.Sdk", "17.7.2");
 
 
         public static void Generator(string tempFilePath, string projectName, string projectId, string fileName, DatabaseType databaseType = DatabaseType.MEMORY )
