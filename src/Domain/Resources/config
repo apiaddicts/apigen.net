@@ -1,0 +1,45 @@
+FROM mcr.microsoft.com/dotnet/sdk:7.0 as build
+
+ARG SONAR_PROJECT_KEY=[[name]]
+ARG SONAR_HOST_URL=
+ARG SONAR_TOKEN=
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y openjdk-11-jdk
+RUN dotnet tool install --global dotnet-sonarscanner
+RUN dotnet tool install --global coverlet.console
+ENV PATH="$PATH:/root/.dotnet/tools"
+
+RUN dotnet sonarscanner begin \
+  /k:"$SONAR_PROJECT_KEY" \
+  /d:sonar.host.url="$SONAR_HOST_URL" \
+  /d:sonar.login="$SONAR_TOKEN" \
+  /d:sonar.cs.opencover.reportsPaths=/coverage.opencover.xml
+
+COPY Api/Api.csproj .
+RUN dotnet restore
+
+COPY . .
+
+RUN dotnet publish --output /out Api
+RUN dotnet test Test \
+  /p:CollectCoverage=true \
+  /p:CoverletOutputFormat=opencover \
+  /p:Exclude="[*]Domain.Generators*" \
+  /p:CoverletOutput="/coverage"
+  
+
+RUN dotnet sonarscanner end /d:sonar.login="$SONAR_TOKEN"
+
+FROM mcr.microsoft.com/dotnet/aspnet:7.0
+WORKDIR /app
+
+EXPOSE 80
+EXPOSE 443
+
+COPY --from=build /out .
+
+ENTRYPOINT ["dotnet", "Api.dll"]
+
+
