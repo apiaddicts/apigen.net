@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Apigen": {
+      "commandName": "Project",
+      "commandLineArgs": "./Examples/api-hospital.yml"
+    }
+  }
+}

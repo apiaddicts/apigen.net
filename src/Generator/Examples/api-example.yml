@@ -1,0 +1,1162 @@
+openapi: 3.0.1
+info:
+  title: api-example
+  version: v1
+  description: Description of the API.
+  contact:
+    name: Example lastname
+    email: example.lastname@mail.es
+  license:
+    name: License name
+    url: https://www.gnu.org/licenses/lgpl-3.0
+servers:
+  - description: LocalHost
+    url: https://localhost:8000
+tags:
+  - name: Users
+    description: Users endpoints.
+  - name: Monitoring
+    description: Operations related to monitoring.
+security:
+  - oAuth2ClientCredentials: []
+paths: 
+  /users:
+    x-apigen-binding:
+      model: User
+    get:
+      tags:
+        - Users
+      summary: Users list.
+      description: Get a list of users.
+      operationId: getUsers
+      security: 
+        - oAuth2ClientCredentials: [read] 
+      parameters:
+        - $ref: '#/components/parameters/initParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/totalParam'
+        - $ref: '#/components/parameters/orderByParam'
+        - $ref: '#/components/parameters/selectParam'
+        - $ref: '#/components/parameters/excludeParam'
+        - $ref: '#/components/parameters/expandParam'
+        - $ref: '#/components/parameters/filterParam'
+      responses:
+        '206':
+          $ref: '#/components/responses/getUsersStandardResponse'
+        '400':
+          $ref: '#/components/responses/getAllUserBadRequestResponse'
+        '401':
+          $ref: '#/components/responses/unauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/forbiddenResponse'
+        '429':
+          $ref: '#/components/responses/tooManyRequestsResponse'
+        default:
+          $ref: '#/components/responses/unexpectedErrorResponse'            
+    post:
+      tags:
+        - Users
+      summary: Create one user. 
+      description: Create one user to assign courses.
+      operationId: createUser
+      security: 
+        - oAuth2ClientCredentials: [write]
+      requestBody:
+        $ref: '#/components/requestBodies/createUserRequestBody'
+      responses:
+        '201':
+          $ref: '#/components/responses/createUserStandardResponse'
+        '400':
+          $ref: '#/components/responses/createUserBadRequestResponse'
+        '401':
+          $ref: '#/components/responses/unauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/forbiddenResponse'
+        '429':
+          $ref: '#/components/responses/tooManyRequestsResponse'
+        default:
+          $ref: '#/components/responses/unexpectedErrorResponse'
+  /users/{userUUID}:
+    patch:
+      tags:
+        - Users
+      summary: Updating a user's data.
+      description: Update the personal data of a user in example Relevate Learning.
+      operationId: updateUser
+      security: 
+        - oAuth2ClientCredentials: [write]
+      parameters:
+        - $ref: '#/components/parameters/userUUID'
+      requestBody:
+        $ref: '#/components/requestBodies/updateUserBody'
+      responses:
+        '204':
+          $ref: '#/components/responses/emptyResponse'
+        '400':
+          $ref: '#/components/responses/defaultUserBadRequestResponse'
+        '401':
+          $ref: '#/components/responses/unauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/forbiddenResponse'
+        '404':
+          $ref: '#/components/responses/notFoundResponse'
+        '429':
+          $ref: '#/components/responses/tooManyRequestsResponse'
+        default:
+          $ref: '#/components/responses/unexpectedErrorResponse'
+    get:
+      tags:
+        - Users
+      summary: Get information from a user.
+      description: Obtains the personal information of a example Relevate Learning user.
+      operationId: getUser
+      security: 
+        - oAuth2ClientCredentials: [read]
+      parameters:
+        - $ref: '#/components/parameters/userUUID'
+        - $ref: '#/components/parameters/selectParam'
+        - $ref: '#/components/parameters/excludeParam'
+        - $ref: '#/components/parameters/expandParam'
+      responses:
+        '200':
+          $ref: '#/components/responses/getUserResponse'
+        '400':
+          $ref: '#/components/responses/defaultUserBadRequestResponse'
+        '401':
+          $ref: '#/components/responses/unauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/forbiddenResponse'
+        '404':
+          $ref: '#/components/responses/notFoundResponse'
+        '429':
+          $ref: '#/components/responses/tooManyRequestsResponse'
+        default:
+          $ref: '#/components/responses/unexpectedErrorResponse'      
+    delete:
+      tags:
+        - Users
+      summary: Delete a user.
+      description: Delete a user in Connect.
+      operationId: deleteUser
+      security: 
+        - oAuth2ClientCredentials: [write]
+      parameters:
+        - $ref: '#/components/parameters/userUUID'
+      responses:
+        '204':
+          $ref:  '#/components/responses/emptyResponse'
+        '400':
+          $ref: '#/components/responses/defaultUserBadRequestResponse'
+        '401':
+          $ref: '#/components/responses/unauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/forbiddenResponse'
+        '404':
+          $ref: '#/components/responses/notFoundResponse'
+        '429':
+          $ref: '#/components/responses/tooManyRequestsResponse'
+        default:
+          $ref: '#/components/responses/unexpectedErrorResponse'
+      x-microcks-operation:
+        delay: 100
+        dispatcher: JSON_BODY
+        dispatcherRules: |
+          return ""
+  /status:
+    get:
+      summary: API monitoring endpoint.
+      description: | 
+        This is a response proposal for the **/status** endpoint specified on RecordGo API definition standard.
+        The endpoint should check API involved systems (such as databases or external backends) as well as API responses to given requests. 
+        There are two arrays to be fulfilled: the _systems_ array and the _requests_ array. 
+        Each of them will contain the systems checks and the API calls checks.
+      operationId: healthCheck
+      security: 
+        - oAuth2ClientCredentials: [read]
+      tags:
+      - Monitoring
+      responses:
+        '200':
+          $ref: '#/components/responses/statusSuccessResponse'
+        '401':
+          $ref: '#/components/responses/unauthorizedResponse'
+        '403':
+          $ref: '#/components/responses/forbiddenResponse'
+        '429':
+          $ref: '#/components/responses/tooManyRequestsResponse'
+        default:
+          $ref: '#/components/responses/unexpectedErrorResponse'
+components:
+  parameters:
+    userUUID:
+      in: path
+      name: userUUID
+      required: true
+      description: The uuid of a user.
+      schema:
+        $ref: '#/components/schemas/uuid'
+      examples:
+        uuidExample:
+          value: 62977d46-7a50-41c9-8d84-38272ac2a8df
+    initParam:
+      in: query
+      name: $init
+      description: | 
+        Number of records we want to init.
+        * Minimum value: 1
+        * Maximum value: Total of records.
+      schema:
+        type: integer
+        format: int32
+        default: 1
+        minimum: 1
+      required: true
+      example: 1
+    limitParam:
+      in: query
+      name: $limit
+      description: |
+        Maximum number of records per page.
+        * Minimum value: 1
+        * Maximum value: 250.
+      schema: 
+        type: integer
+        format: int32
+        default: 10
+      required: true
+      example: 10
+    totalParam:
+      in: query
+      name: $total
+      description: |
+        Indicates whether the _total_ and _total_pages_ attributes should be calculated and returned in the _metadata.paging_ object of the standard response.
+      schema: 
+        type: boolean
+        default: false
+      required: false
+      example: true
+    selectParam:
+      in: query
+      name: $select
+      schema:
+        type: array
+        minItems: 1
+        maxItems: 100
+        items:
+          type: string
+      description: | 
+        Allows you to select the attributes of the resource that you want to obtain in the query.
+        It is recommended for use when you only want to obtain a few attributes from a complex resource.
+        It can be specified as an array of attributes.
+      example: [id,longDescription,type]
+    excludeParam:
+      in: query
+      name: $exclude
+      schema:
+        type: array
+        items:
+          type: string
+        minItems: 1
+        maxItems: 100
+      description: |
+        Allows you to exclude certain attributes of the resource.
+        It is recommended for use when you want to exclude some attributes from a complex resource.
+        It can be specified as an array of attributes.
+      example: [id,type]
+    expandParam:
+      in: query
+      name: $expand
+      schema:
+        type: array
+        minItems: 1
+        maxItems: 100
+        items:
+          type: string
+      description: |  
+        Indicates a list of sub-attributes that you want to expand.
+        It can be specified as an array of attributes.
+      example: [subcategories,typeName]
+    orderByParam:
+      in: query
+      name: $orderby
+      schema:
+        type: array
+        minItems: 1
+        maxItems: 100
+        items:
+          type: string
+      description: |
+        It allows to indicate the ordering criteria of a query.
+        It can be specified as an array of attributes.
+      example: [date desc]
+    filterParam:
+      in: query
+      name: $filter
+      schema:
+        type: string
+        maxLength: 100
+        minLength: 1
+      description: Indicates the filter criteria for a complex query.
+      example: substringof('t',alias) OR substringof('des',description)
+  schemas:
+    uuid:
+      type: string
+      format: uuid
+      minLength: 36
+      maxLength: 36
+      pattern: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+      example: 62977d46-7a50-41c9-8d84-38272ac2a8df
+    standardError:
+      type: object
+      properties:
+        error:
+          type: integer
+          format: int32
+          description: Code of the error.
+          example: 100
+        msg:
+          type: string
+          description: |
+            Message of the error
+            - OK
+            - User and/or password are not correct.
+            - System error   
+            - User does not exist
+            - The course does not exist
+            - The course already exists
+            - The user was already enrolled in the course
+            - The itinerary does not exist
+            - The itinerary already exists
+            - The user was already enrolled in the itinerary
+            - User already exists
+            - Compulsory parameters are missing.
+            - Community does not exist
+            - The user was already registered in the community.
+          example: ok
+          maxLength: 50
+          minLength: 2
+    standardPaging:
+      type: object
+      description: Pagination information object .
+      properties:
+        init:
+          type: integer
+          format: int32
+          description: Number of records to init.
+          example: 1
+        limit:
+          type: integer
+          format: int32
+          description: Number of records per page.
+          example: 25
+        total:
+          type: integer
+          format: int32
+          description: Total number of records.
+          example: 35
+      required:
+      - init
+      - limit
+      - total
+    standardResponse:
+      type: object
+      properties:
+        data:
+          anyOf:
+            - type: object
+              nullable: true
+            - type: array
+              nullable: true
+    standardErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/standardResponse'
+        - type: object
+          properties:
+            errors:
+              type: array
+              items:
+                $ref: '#/components/schemas/standardError'
+      required:
+        - errors
+    standardPagedResponse:
+      allOf:
+        - $ref: '#/components/schemas/standardResponse'
+        - properties:
+            paging:
+              allOf:
+                - $ref: '#/components/schemas/standardPaging'
+      required:
+        - paging
+        - data        
+    userDataSchema:
+      x-apigen-mapping:
+        model: User
+      type: object
+      description: Information for user.
+      properties:
+        userName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: User name.
+          example: 'John'
+        userSurname1:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Last name of the new User.
+          example: 'Doe'
+        userSurname2:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Second surname.
+          example: 'Michells'
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 255
+          example: 'john.doe@example.es'
+        idUserProfile:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 99
+          description: User profile.
+          example: 6
+        isBlocked:
+          type: integer
+          format: int32
+          example: 0
+          description: |
+            Blocked.
+            Allowed values:
+            - 0: Not locked
+            - 1: Blocked
+            Example: 0
+          enum:
+            - 0
+            - 1
+        department:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'Department'
+          example: 'Sales'
+        workplace:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'Workplace'
+          example: 'Office'
+        country:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'Country'
+          example: 'Spain'
+        city:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'City'
+          example: 'Madrid'
+        administrativeAreaLevel2:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: province
+          example: Madrid
+        zipCode:
+          type: string
+          minLength: 5
+          maxLength: 20
+          description: 'zipCode'
+          example: '28001'
+        telephone:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'telephone'
+          example: '+34919930878'
+        mobile:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'mobile phone'
+          example: '+34919930878'
+        documentId:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'Identity document'
+          example: '12345678Z'
+        documentType:
+            type: string
+            minLength: 1
+            maxLength: 255
+            description: 'type of document'
+            example: 'DNI'
+        administrativeAreaLevel1:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'administrative area Level 1'
+          example: 'Cataluña'
+        address:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'Address'
+          example: 'Avda. Ciudad de Barcelona, 36 '
+        area:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'area'
+          example: 'Salesare'
+        division:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'division'
+          example: 'Sales'
+        dateBirthday:
+          type: string
+          format: date
+          description: Birth date (YYYY-MM-DD)
+          example: '2022-12-20'
+          maxLength: 10
+          minLength: 10
+        governmentDataUser:
+          $ref: '#/components/schemas/governmentUserDataSchema'
+        governmentDataTutorCourse:
+          $ref: '#/components/schemas/governmentDataTutorCourseSchema'
+    userCreationDataSchema:
+      x-apigen-mapping:
+        model: User
+      allOf: 
+        - $ref: '#/components/schemas/userDataSchema'
+      required:
+        - login
+        - userName
+        - userSurname1
+        - email
+        - idUserProfile
+
+    updateDataSchema:
+      x-apigen-mapping:
+        model: User
+      allOf:
+        - $ref: '#/components/schemas/userDataSchema'
+        - type: object
+          properties:
+            expiryDate:
+              type: string
+              format: date-time
+              description: Date of user withdrawal (YYYY-MM-DD HH:MM:SS)
+              example: '2022-12-20 10:12:11'
+              maxLength: 19
+              minLength: 19
+    governmentUserDataSchema:
+      x-apigen-mapping:
+        model: User
+      type: object
+      description: User information
+      properties:
+        niss:
+          type: string
+          minLength: 1
+          maxLength: 15
+          description: 'NISS'
+          example: '123456789012'
+        contributionAccount:
+          type: string
+          minLength: 1
+          maxLength: 15
+          description: 'contribution account'
+          example: '23/77838939'
+        wageCosts:
+          description: Wage costs
+          type: number
+          format: float
+          minimum: 0
+          maximum: 9999999999.99
+          example: 1234567891.01
+        educationLevel: 
+          $ref: '#/components/schemas/educationLevelSchema'
+        professionalCategory:
+          $ref: '#/components/schemas/professionalSchema'
+        priceGroup:
+          $ref: '#/components/schemas/priceGroupSchema'
+        knowledge:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'knowledge'
+          example: 'Conocimiento'
+        assessment:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: 'General evaluation of the modality'
+          example: '80'
+        reasons:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'Reasons for choosing a course in teletraining modality'
+          example: 'Get a new job'
+        employmentSituation:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'Employment situation'
+          example: 'Unemployed'
+        companySize:
+          type: integer
+          format: int32
+          minLength: 1
+          maxLength: 1000000
+          description: Company size
+          example: 100
+        scheduleTraining:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Schedule of the training action
+          example: '10:00:00'
+    professionalSchema:
+      type: integer
+      format: int32
+      example: 1
+      minimum: 1
+      maximum: 5
+      description: |
+        Professional category:
+        - 1: Manager
+        - 2: Intermediate Command
+        - 3: Technician
+        - 4: Skilled Worker
+        - 5: Worker with Low Qualification
+    priceGroupSchema:
+      type: integer
+      format: int32
+      example: 1
+      minimum: 1
+      maximum: 11
+      description: |
+        Price group:
+        - 1: Engineers and Graduates
+        - 2: Technical Engineers, Experts and Graduated Assistants
+        - 3: Administrative and workshop heads
+        - 4: Non-qualified assistants
+        - 5: Administrative officers
+        - 6: Subordinates
+        - 7: Administrative assistants
+        - 8: First and second officers
+        - 9: Third class officers and specialists
+        - 10: Unskilled workers over 18 years of age
+        - 11: Workers under eighteen years of age
+    educationLevelSchema:
+      type: integer
+      format: int32
+      example: 1
+      minimum: 1
+      maximum: 10
+      description: |
+        Education Level:
+        - 1: Less than elementary education
+        - 2: Elementary education
+        - 3: First stage of secondary education
+        - 4: Second stage of secondary education
+        - 5: Non-higher post-secondary education
+        - 6: Higher Technician/FP higher degree and equivalents
+        - 7: University E. 1st cycle (Diploma-Grades)
+        - 8: 2nd cycle university E. (Bachelor-Master)
+        - 9: 3rd cycle university E. (PhD)
+        - 10: Other qualifications
+    governmentDataTutorCourseSchema:
+      type: object
+      description: Teacher Information
+      properties:
+        teachingExperience:
+          type: number
+          format: double
+          minLength: 1
+          maxLength: 50
+          description: 'Time of professional experience as a teacher in years'
+          example: 2.5
+        competenceTeacher:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'Competence for teaching'
+          example: 'Maths'
+        onlineExperience:
+          type: number
+          format: float
+          description: 'Time of professional experience as an online training teacher'
+          minLength: 1
+          maxLength: 50
+          example: 2
+        impartExperience:
+          type: number
+          format: float
+          minLength: 1
+          maxLength: 50
+          example: 2 
+          description: 'Time of professional experience in the area of ​​the competence unit taught, in years'
+        contractualSituation:
+          type: string
+          example: 'PP'
+          maxLength: 2
+          minLength: 2
+          description: |
+            Contractual situation with the training center:
+            - PP: Staff
+            - CI: Hired to teach
+          enum:
+            - PP
+            - CI
+        idOrganization:
+          type: integer
+          format: int32
+          minLength: 0
+          maxLength: 999999999
+          example: 200
+          description: Identifier of the organization associated with the user
+        loginResponsible:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: User manager login
+          example: login
+    system:
+      type: object
+      properties:
+        system:
+          type: string
+          description: System name
+          example: database
+        status:
+          type: boolean
+          description: System status
+          example: true
+    status:
+      type: object
+      properties:
+        systems:
+          type: array
+          items:
+            $ref: '#/components/schemas/system'
+  requestBodies:
+    createUserRequestBody:
+      description: User create request body
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/userCreationDataSchema'
+          examples:
+            usersDataExample:
+              $ref: '#/components/examples/usersCreationDataExample'
+            usersDataCompleteExample:
+              $ref: '#/components/examples/usersCreationDataCompleteExample'
+    updateUserBody:
+      description: User update request body
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/updateDataSchema'
+          examples:
+            usersUpdateDataExample:
+              $ref: '#/components/examples/usersUpdateDataExample'
+            usersUpdateDataCompleteExample:
+              $ref: '#/components/examples/usersUpdateDataCompleteExample'
+  responses:  
+    createUserStandardResponse:
+      description: Create user response
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/standardResponse'
+              - properties:
+                  data: 
+                    type: object                    
+          examples:
+            createUserResponseExample:
+              $ref: '#/components/examples/createUserResponseExample'
+    emptyResponse:
+      description: No Content
+    defaultUserBadRequestResponse:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/standardErrorResponse'
+          examples:
+            systemErrorResponseExample:
+              $ref: '#/components/examples/systemErrorResponseExample'
+            userNoExistResponseExample:
+              $ref: '#/components/examples/userNoExistResponseExample'
+            badRequestResponseExample:
+              $ref: '#/components/examples/badRequestResponseExample'     
+    getAllUserBadRequestResponse:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/standardErrorResponse'
+          examples:
+            systemErrorResponseExample:
+              $ref: '#/components/examples/systemErrorResponseExample'
+            badRequestResponseExample:
+              $ref: '#/components/examples/badRequestResponseExample'          
+
+    getUserResponse:
+      description: Obtains the personal information of a example Relevate Learning  user.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/standardResponse'
+              - properties:
+                  data:
+                    $ref: '#/components/schemas/userDataSchema'
+          examples:
+            getUserDataExample:
+              $ref: '#/components/examples/getUserDataExample'   
+    getUsersStandardResponse:
+      description: Obtains the personal information of a the users list
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/standardPagedResponse'
+              - properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/userDataSchema'
+          examples:
+            getUsersDataExample:
+              $ref: '#/components/examples/getUsersDataExample'   
+    createUserBadRequestResponse:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/standardErrorResponse'
+          examples:
+            systemErrorResponseExample:
+              $ref: '#/components/examples/systemErrorResponseExample'
+            userAlreadyExistResponseExample:
+              $ref: '#/components/examples/userAlreadyExistResponseExample'
+            badRequestResponseExample:
+              $ref: '#/components/examples/badRequestResponseExample'
+    unauthorizedResponse:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/standardErrorResponse'
+          example:
+            errors:
+              - error: 401
+                msg: Unauthorized
+    forbiddenResponse:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/standardErrorResponse'
+          example:
+            errors:
+              - error: 403
+                msg: Forbidden
+    notFoundResponse:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/standardErrorResponse'
+          example:
+            errors:
+              - error: 0
+                msg: Not found
+    tooManyRequestsResponse:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/standardErrorResponse'
+          example:
+            errors:
+              - error: 429
+                msg: Too many requests
+    unexpectedErrorResponse:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/standardErrorResponse'
+          example:
+            errors:
+              - error: 500
+                msg: 'Unexpected Error '
+    statusSuccessResponse:
+      description: Status success response
+      headers:
+        X-Trace-ID:
+          description: Trace id header
+          schema:
+            $ref: '#/components/schemas/uuid'
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/standardResponse'
+              - properties:
+                  data:
+                    $ref: '#/components/schemas/status'
+          examples:
+            Example1:
+              $ref: '#/components/examples/exampleGetStatus' 
+  examples:        
+    usersCreationDataExample:
+      value:
+        login: 'api.user'
+        sendEmailSchema: true
+        userName: 'José'
+        userSurname1: 'Pérez'
+        email: 'jose.perez@example.es'
+        idUserProfile: 6
+    usersCreationDataCompleteExample:
+      value:
+        login: 'api.user2'
+        password: 'example.2023'
+        userName: 'John'
+        userSurname1: 'Peter'
+        email: 'john.pipen@ranstad.es'
+        idUserProfile: 7
+        isBlocked: 1
+        userSurname2: 'Neville'
+        department: 'Sales'
+        workplace: 'Home'
+        country: 'Spain'
+        city: 'Madrid'
+        administrativeAreaLevel2: 'Madrid'
+        zipCode: '28002'
+        telephone: '+34919930879'
+        mobile: '+34919930878'
+        documentId: '12345679Z'
+        documentType: 'DNI'
+        administrativeAreaLevel1: 'Cataluña'
+        address: 'Avda. Ciudad de Barcelona, 38'
+        area: 'Madrid'
+        division: 'Madrid'
+        dateBirthday: '2022-12-20'
+        governmentDataUser:
+          niss: '223456789012'
+          contributionAccount: 23/77838939
+          wageCosts: 200
+          educationLevel: 9
+          professionalCategory: 1
+          priceGroup: 1
+          knowledge: Engineering
+          assessment: '90'
+          reasons: Get job
+          employmentSituation: Unemployed
+          companySize: 200
+          scheduleTraining: '11:00:00'
+        governmentDataTutorCourse:
+          teachingExperience: 4
+          competenceTeacher: 'Maths'
+          onlineExperience: 2
+          impartExperience: 3
+          contractualSituation: 'CI'
+          idOrganization: 23
+          loginResponsible: 'rands_tutor'
+    getUserDataExample:
+      value:
+        data:
+          idUserProfile: 6
+          email: 'jose.perez@example.es'
+          isBlocked: 0
+          userName: 'José'
+          userSurname1: 'Pérez'
+          userSurname2: 'Perez'
+          workplace: 'Workplace'
+          country: 'ESPAÑA'
+          city: 'Madrid'
+          address: 'mi dirección'
+          administrativeAreaLevel2: 'Madrid'
+          zipCode: '23002'
+          telephone: '+91658897472'
+          mobile: '+34658897472'
+          area: 'mi área'
+          documentId: '47041822L'
+          documentType: 'DNI'
+          dateBirthday: '1988-07-25'
+          division: 'Madrid'
+    getUsersDataExample:
+      value:
+        data:
+          - idUserProfile: 6
+            email: 'jose.perez@example.es'
+            isBlocked: 0
+            userName: 'José'
+            userSurname1: 'Pérez'
+            userSurname2: 'Perez'
+            workplace: 'Workplace'
+            country: 'ESPAÑA'
+            city: 'Madrid'
+            address: 'mi dirección'
+            administrativeAreaLevel2: 'Madrid'
+            zipCode: '23002'
+            telephone: '+91658897472'
+            mobile: '+34658897472'
+            area: 'mi área'
+            documentId: '47041822L'
+            documentType: 'DNI'
+            dateBirthday: '1988-07-25'
+            division: 'Madrid'
+          - idUserProfile: 6
+            email: 'miguel.perez@example.es'
+            isBlocked: 0
+            userName: 'miguel'
+            userSurname1: 'Pérez'
+            userSurname2: 'Perez'
+            workplace: 'Workplace'
+            country: 'ESPAÑA'
+            city: 'Barcelona'
+            address: 'mi dirección'
+            administrativeAreaLevel2: 'Barcelona'
+            zipCode: '23002'
+            telephone: '+91653897472'
+            mobile: '+34651897472'
+            area: 'mi área'
+            documentId: '17041822L'
+            documentType: 'DNI'
+            dateBirthday: '1992-07-25'
+            division: 'Barcelona'
+        paging:
+          init: 1
+          limit: 25
+          total: 35
+    usersUpdateDataExample:
+      value:
+        userName: 'API Test2'
+        userSurname1: "123"
+        email: "apites2@yopmail.com"
+        idUserProfile: 6
+    usersUpdateDataCompleteExample:
+      value:
+        login: 'liane.figueroa'
+        password: 'example.2023'
+        userName: 'Frank'
+        userSurname1: 'Richards'
+        email: 'frank.richards@example.es'
+        idUserProfile: 8
+        isBlocked: 0
+        expiryDate: '2023-08-15 12:00:00'
+        userSurname2: 'Boyle'
+        departament: 'Administration'
+        workplace: 'Corporate'
+        country: 'England'
+        city: 'London'
+        province: 'London'
+        zipCode: '23002'
+        telephone: '+34919930889'
+        mobile: '+34919930856'
+        documentId: '35345679Z'
+        documentType: 'DNI'
+        autonomousCommunity: 'London'
+        address: 'Avda. Road, 38'
+        area: 'London'
+        division: 'London'
+        dateBirthday: '2022-12-23'
+        governmentUserData:
+          niss: '583456789012'
+          contributionAccount: '78/77838939'
+          wageCosts: 34
+          educationLevel: 5
+          professionalCategory: 2
+          priceGroup: 2
+          knowledge: 'Accounting'
+          assessment: '85'
+          reasons: 'Never stop learning'
+          employmentSituation: 'Part time employee'
+          companySize: '50 people'
+          scheduleTraining: '12:00:00'
+        fundaeTutor:
+          teachingExperience: 5
+          competenceTeacher: 'Finance'
+          onlineExperience: 3
+          impartExperience: 2
+          contractualSituation: 'CI'
+          idOrganization: 1234
+          loginResponsible: 'loginTutor'
+    createUserResponseExample:
+      value:
+        data:
+          idUserProfile: 1
+    systemErrorResponseExample:
+      value:
+        errors:
+          - error: 2
+            msg: System Error
+         
+    userNoExistResponseExample:
+      value:
+        errors:
+          - error: 3
+            msg: User does not exist
+    userAlreadyExistResponseExample:
+      value:
+        errors:
+          - error: 8
+            msg: User already exists
+    badRequestResponseExample:
+      value:
+        errors:
+          - error: 9
+            msg: Compulsory parameters are missing
+    exampleGetStatus:
+      value:
+        data:
+          systems:
+            - system: database
+              status: true         
+  securitySchemes:
+    oAuth2ClientCredentials:
+      type: oauth2
+      description: See http://developers.gettyimages.com/api/docs/v3/oauth2.html
+      flows:
+        clientCredentials:
+          tokenUrl: https://api.example.es/oauth2/token/
+          scopes: {}
+
+  x-apigen-models:
+    User:
+      relational-persistence:
+        table: users
+      attributes:
+        uuid:
+          type: string
+          format: uuid
+          relational-persistence:
+            primary-key: true
+            autogenerated: true
+        userName:
+          type: string
+        userSurname1:
+          type: string
+        email:
+          type: string
+        idUserProfile:
+          type: int
