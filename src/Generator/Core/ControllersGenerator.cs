@@ -126,6 +126,21 @@ namespace Generator.Core
         private static void DefineEndpointMethod(ICodegenOutputFile writer, string pathKey, KeyValuePair<OperationType, OpenApiOperation> operation, List<string> servicesAlreadyInjected)
         {
             writer.WriteLine($"[Http{operation.Key.ToString().Pascalize()}(\"{pathKey}\")]");
+            
+            // Add [Consumes] attribute for file uploads
+            if (operation.Value.RequestBody != null)
+            {
+                var content = operation.Value.RequestBody.Content;
+                if (content.ContainsKey("multipart/form-data"))
+                {
+                    writer.WriteLine($"[Consumes(\"multipart/form-data\")]");
+                }
+                else if (content.ContainsKey("application/octet-stream"))
+                {
+                    writer.WriteLine($"[Consumes(\"application/octet-stream\")]");
+                }
+            }
+            
             writer.WithCurlyBraces($"public async Task<IActionResult> {operation.Value.OperationId.Pascalize()}({AddOperations(operation.Value)})", () =>
             {
                 if (servicesAlreadyInjected.Count != 0)
@@ -189,6 +204,10 @@ namespace Generator.Core
 
             if (content.ContainsKey("multipart/form-data"))
             {
+                return "[FromForm] IFormFile file";
+            }
+            else if (content.ContainsKey("application/octet-stream"))
+            {
                 return "IFormFile file";
             }
             else if (content.TryGetValue("application/json", out var appJson))
@@ -212,27 +231,45 @@ namespace Generator.Core
 
         private static void AddLogic(KeyValuePair<OperationType, OpenApiOperation> operation, string entity, ICodegenOutputFile writer, string? id)
         {
-            string parameters = ConcatOperations(operation.Value);
+            bool isFileUpload = operation.Value.RequestBody?.Content.ContainsKey("multipart/form-data") == true ||
+                                operation.Value.RequestBody?.Content.ContainsKey("application/octet-stream") == true;
+            bool hasRequestBody = operation.Value.RequestBody != null && 
+                                  operation.Value.RequestBody.Content.ContainsKey("application/json");
+            
             switch (operation.Key)
             {
                 case OperationType.Get when id == null:
-                    writer.WriteLine($"var result = await _{entity.Camelize()}Service.Get({parameters});");
+                    writer.WriteLine($"var result = await _{entity.Camelize()}Service.Get({BuildGetParameters(operation.Value)});");
                     break;
                 case OperationType.Get when id != null:
-                    writer.WriteLine($"var result = await _{entity.Camelize()}Service.GetById({parameters});");
+                    writer.WriteLine($"var result = await _{entity.Camelize()}Service.GetById({BuildGetByIdParameters(operation.Value, id)});");
                     break;
-                case OperationType.Post when operation.Value.Summary.Contains("search"):
-                    writer.WriteLine($"var result = await _{entity.Camelize()}Service.Search({parameters});");
+                case OperationType.Post when operation.Value.Summary?.Contains("search") == true:
+                    writer.WriteLine($"var result = await _{entity.Camelize()}Service.Search({ConcatOperations(operation.Value)});");
                     break;
-                case OperationType.Post:
+                case OperationType.Post when isFileUpload:
+                    writer.WriteLine($"// File upload logic - implement according to your requirements");
+                    writer.WriteLine($"var result = new {{ FileName = file.FileName, Size = file.Length }};");
+                    break;
+                case OperationType.Post when hasRequestBody:
                     writer.WriteLine($"var map = _mapper.Map<Entities.{entity}>(body);");
                     writer.WriteLine($"var result = await _{entity.Camelize()}Service.Post(map);");
                     break;
+                case OperationType.Post:
+                    writer.WriteLine($"// POST without request body - implement custom logic as needed");
+                    writer.WriteLine($"var result = new {{ Message = \"Operation completed\" }};");
+                    break;
+                case OperationType.Put when hasRequestBody:
+                case OperationType.Patch when hasRequestBody:
+                    writer.WriteLine($"var map = _mapper.Map<Entities.{entity}>(body);");
+                    if (!string.IsNullOrEmpty(id))
+                        writer.WriteLine($"map?.GetType().GetProperties().FirstOrDefault()?.SetValue(map, {id});");
+                    writer.WriteLine($"var result = await _{entity.Camelize()}Service.Put(map!);");
+                    break;
                 case OperationType.Put:
                 case OperationType.Patch:
-                    writer.WriteLine($"var map = _mapper.Map<Entities.{entity}>(body);");
-                    writer.WriteLine($"map?.GetType().GetProperties().FirstOrDefault()?.SetValue(map, {id});");
-                    writer.WriteLine($"var result = await _{entity.Camelize()}Service.Put(map);");
+                    writer.WriteLine($"// PUT/PATCH without request body - implement custom logic as needed");
+                    writer.WriteLine($"var result = new {{ Message = \"Operation completed\" }};");
                     break;
                 case OperationType.Delete:
                     writer.WriteLine($"var result = await _{entity.Camelize()}Service.Delete({id});");
@@ -256,12 +293,44 @@ namespace Generator.Core
             var parameters = operation.Parameters.Select(p => p.Name.CleanString().Camelize()).ToList();
             if (operation.RequestBody != null)
             {
-                if (parameters.Count != 0)
-                    parameters.Add("body");
-                else
+                var content = operation.RequestBody.Content;
+                if (content.ContainsKey("multipart/form-data") || content.ContainsKey("application/octet-stream"))
+                {
                     parameters.Add("file");
+                }
+                else if (content.ContainsKey("application/json"))
+                {
+                    parameters.Add("body");
+                }
             }
             return string.Join(", ", parameters);
+        }
+
+        private static string BuildGetParameters(OpenApiOperation operation)
+        {
+            var paramMap = operation.Parameters.ToDictionary(p => p.Name.ToLower(), p => p.Name.CleanString().Camelize());
+            
+            var init = paramMap.ContainsKey("init") ? paramMap["init"] : "0";
+            var limit = paramMap.ContainsKey("limit") ? paramMap["limit"] : "10";
+            var total = paramMap.ContainsKey("total") ? paramMap["total"] : "false";
+            var orderby = paramMap.ContainsKey("orderby") ? paramMap["orderby"] : "null";
+            var select = paramMap.ContainsKey("select") ? paramMap["select"] : "null";
+            var exclude = paramMap.ContainsKey("exclude") ? paramMap["exclude"] : "null";
+            var expand = paramMap.ContainsKey("expand") ? paramMap["expand"] : "null";
+            var filter = paramMap.ContainsKey("filter") ? paramMap["filter"] : "null";
+
+            return $"{init}, {limit}, {total}, {orderby}, {select}, {exclude}, {expand}, {filter}";
+        }
+
+        private static string BuildGetByIdParameters(OpenApiOperation operation, string id)
+        {
+            var paramMap = operation.Parameters.ToDictionary(p => p.Name.ToLower(), p => p.Name.CleanString().Camelize());
+            
+            var select = paramMap.ContainsKey("select") ? paramMap["select"] : "null";
+            var exclude = paramMap.ContainsKey("exclude") ? paramMap["exclude"] : "null";
+            var expand = paramMap.ContainsKey("expand") ? paramMap["expand"] : "null";
+
+            return $"{id}, {select}, {exclude}, {expand}";
         }
 
     }

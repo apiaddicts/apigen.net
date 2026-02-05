@@ -11,7 +11,7 @@ namespace Generator.Core
 
     public static class StructureGenerator
     {
-        public static readonly string TargetFramework = "net8.0";
+        public static readonly string TargetFramework = "net10.0";
         private static readonly PackageReference VisualStudioVersion = new("VisualStudioVersion", "17.5.33414.496");
         private static readonly PackageReference MinimumVisualStudioVersion = new("MinimumVisualStudioVersion", "10.0.40219.1");
         private static readonly PackageReference VisualStudioFormatVersion = new("Microsoft Visual Studio Solution File, Format Version", "12.00");
@@ -236,7 +236,7 @@ namespace Generator.Core
             	<ItemGroup>
             		<PackageReference Include="Moq" Version="{{NugetVersions["Moq"]}}" />
             		<PackageReference Include="Serilog" Version="{{NugetVersions["Serilog"]}}" />
-            		<PackageReference Include="xunit" Version="{{NugetVersions["xunit"]}}" />
+            		<PackageReference Include="xunit.v3" Version="{{NugetVersions["xunit.v3"]}}" />
             		<PackageReference Include="xunit.runner.visualstudio" Version="{{NugetVersions["xunit.runner.visualstudio"]}}" />
             		<PackageReference Include="coverlet.collector" Version="{{NugetVersions["coverlet.collector"]}}" />
             		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="{{NugetVersions["Microsoft.NET.Test.Sdk"]}}" />
@@ -261,7 +261,6 @@ namespace Generator.Core
             w.WriteLine($$"""
             using Microsoft.EntityFrameworkCore;
             using System.Text.Json.Serialization;
-            using AutoMapper;
             using Context;
             using Helpers;
             using Serilog;
@@ -292,8 +291,7 @@ namespace Generator.Core
                         builder.Services.AddRouting(options => options.LowercaseUrls = true);
                         builder.Services.AddEndpointsApiExplorer();
                         builder.Services.AddSwaggerGen();
-                        var mapperConfig = new MapperConfiguration(mc => { mc.AddProfile(new MappingProfile()); });
-                        builder.Services.AddSingleton(mapperConfig.CreateMapper());
+                        builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
                         builder.Services.AddRepositories();
                         builder.Services.AddServices();
                         builder.Services.AddHealthChecks().AddDbContextCheck<ApiDbContext>();

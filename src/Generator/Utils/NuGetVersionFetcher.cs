@@ -52,7 +52,7 @@ namespace Generator.Utils
                 "AutoMapper",
                 "Moq",
                 "MockQueryable.Moq",
-                "xunit",
+                "xunit.v3",
                 "xunit.runner.visualstudio",
                 "coverlet.collector"
             };

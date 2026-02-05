@@ -100,7 +100,7 @@ namespace Generator.Core
                     w.WriteLine("[DatabaseGenerated(DatabaseGeneratedOption.Identity)]");
                 }
 
-                if (column != null)
+                if (column != null && !column.Value.Pascalize().Equals(name.Pascalize(), StringComparison.OrdinalIgnoreCase))
                     w.WriteLine($"public {FormatType(column.PrimitiveType.ToString())} {column.Value.Pascalize()} {{get; set;}}");
             }
 

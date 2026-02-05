@@ -21,8 +21,16 @@ namespace Generator.Core
                 Log.Debug("Generating Dto Models");
                 foreach (var schema in doc.Components.Schemas)
                 {
+                    // Skip schemas that are just primitive types with constraints (like enums)
+                    // These should not generate separate classes
+                    bool isPrimitiveSchema = schema.Value.Type != null && 
+                                             (schema.Value.Properties.Count == 0 && schema.Value.AllOf.Count == 0) &&
+                                             (schema.Value.Type == "integer" || schema.Value.Type == "number" || 
+                                              schema.Value.Type == "string" || schema.Value.Type == "boolean");
+                    
                     if ((schema.Value.Properties.Count > 0 || schema.Value.AllOf.Count > 0) &&
-                        !schema.Key.Pascalize().Contains("Standard", StringComparison.CurrentCultureIgnoreCase))
+                        !schema.Key.Pascalize().Contains("Standard", StringComparison.CurrentCultureIgnoreCase) &&
+                        !isPrimitiveSchema)
                     {
                         GenerateModels(schema, "Models", tempFilePath).SaveToFile(save);
                     }
@@ -51,21 +59,28 @@ namespace Generator.Core
                     // Write properties for AllOf references without a specific reference object
                     foreach (var reference in schema.Value.AllOf.Where(x => x.Reference == null))
                     {
-                        WriteProperties(writer, reference);
+                        WriteProperties(writer, reference, className);
                     }
                     // Write direct properties of the schema
-                    WriteProperties(writer, schema.Value);
+                    WriteProperties(writer, schema.Value, className);
                 });
             });
 
             return (writer, $"{tempFilePath}/src/Domain/Models/");
         }
 
-        private static void WriteProperties(ICodegenOutputFile writer, OpenApiSchema schema)
+        private static void WriteProperties(ICodegenOutputFile writer, OpenApiSchema schema, string? className = null)
         {
             foreach (var property in schema.Properties)
             {
                 string propertyName = property.Key.Pascalize();
+                
+                // Avoid property name conflict with class name
+                if (className != null && propertyName.Equals(className, StringComparison.OrdinalIgnoreCase))
+                {
+                    propertyName += "Value";
+                }
+                
                 string type = GetType(property.Value);
 
                 writer.WriteLine($"[JsonPropertyName(\"{property.Key}\")]");
@@ -81,9 +96,24 @@ namespace Generator.Core
         private static string GetType(OpenApiSchema property)
         {
             if (property.Reference != null)
+            {
+                // Check if the referenced schema is actually a primitive type
+                // In OpenAPI, schemas ending with "Schema" that have a primitive type should use the base type
+                if (property.Type != null && !string.IsNullOrEmpty(property.Type))
+                {
+                    // The reference has an inline type definition, use that instead
+                    return FormatType(property.Type);
+                }
                 return $"{property.Reference.Id.Pascalize()}";
+            }
             if (property.Items != null)
-                return property.Items.Reference != null ? $"List<{property.Items.Reference.Id.Pascalize()}>" : "List";
+            {
+                if (property.Items.Reference != null)
+                    return $"List<{property.Items.Reference.Id.Pascalize()}>";
+                if (property.Items.Type != null)
+                    return $"List<{FormatType(property.Items.Type).TrimEnd('?')}>";
+                return "List<object>";
+            }
             return FormatType(property.Type);
         }
 

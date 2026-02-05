@@ -56,7 +56,7 @@ namespace Api
             services.AddSwaggerExamplesFromAssemblies(Assembly.GetEntryAssembly());
             var openApiInfo = new OpenApiInfo
             {
-                Title = "🍩 Apigen ~ dotnet 8",
+                Title = "🍩 Apigen ~ dotnet 10",
                 Version = "v1",
                 License = new OpenApiLicense()
                 {

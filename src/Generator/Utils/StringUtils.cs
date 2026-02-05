@@ -19,12 +19,12 @@ namespace Generator.Utils
         public static string FormatType(string? type, string? format = null, string? typeArray = null)
         {
             if (type == null)
-                return "";
+                return "object?";
 
             switch (type.ToLower())
             {
                 case "array":
-                    return $"List<{typeArray}>?";
+                    return !string.IsNullOrEmpty(typeArray) ? $"List<{typeArray}>?" : "List<object>?";
                 case "integer":
                 case "long":
                 case "number":
@@ -32,6 +32,7 @@ namespace Generator.Utils
                 case "boolean":
                     return "bool?";
                 case "localdate":
+                case "localdatetime":
                 case "string" when format != null && format.Equals("date"):
                     return "DateTime?";
                 case "string":
@@ -46,6 +47,11 @@ namespace Generator.Utils
             if (itemType != null && type.Equals("array", StringComparison.InvariantCultureIgnoreCase))
             {
                 return $"List<{itemType.Value}>?";
+            }
+
+            if (type.Equals("relation", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return itemType != null ? $"{itemType.Value}?" : "object?";
             }
 
             return FormatType(type);
