@@ -41,9 +41,11 @@ namespace Generator
             var tempFilePath = Path.Combine(Path.GetTempPath(), "apigen", GuidId());
             Log.Debug("Temporal Path ~ {TempFilePath}", tempFilePath);
 
+            var dbType = OpenApiUtils.GetDatabaseType(doc);
+
             Log.Debug($"...........................................................");
             //4. Generating
-            StructureGenerator.Generator(tempFilePath, projectName, projectId, fileName);
+            StructureGenerator.Generator(tempFilePath, projectName, projectId, fileName, dbType);
             MappingProfileGenerator.Generator(doc, tempFilePath).SaveToFile();
             ControllersGenerator.Generator(doc, tempFilePath);
             ModelsDtoGenerator.Generator(doc, tempFilePath);

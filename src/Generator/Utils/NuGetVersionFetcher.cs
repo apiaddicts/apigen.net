@@ -45,6 +45,8 @@ namespace Generator.Utils
                 "Microsoft.EntityFrameworkCore.DynamicLinq",
                 "Microsoft.EntityFrameworkCore.InMemory",
                 "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore",
+                "Npgsql.EntityFrameworkCore.PostgreSQL",
+                "Pomelo.EntityFrameworkCore.MySql",
                 "Swashbuckle.AspNetCore",
                 "Serilog",
                 "Serilog.Sinks.Console",

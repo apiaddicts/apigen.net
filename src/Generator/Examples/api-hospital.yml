@@ -916,8 +916,6 @@ x-apigen-project:
   name: Apigen Demo Hospital
   description: Apigen Demo Hospital API
   version: 1.0.0
-  relational-persistence:
-    type: POSTGRESQL
   java-properties:
     group-id: org.apiaddicts.apitools.apigen.demo
     artifact-id: hospital

@@ -1,4 +1,5 @@
-﻿using Microsoft.OpenApi.Any;
+﻿using Generator.Enums;
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 
 namespace Generator.Utils
@@ -9,6 +10,7 @@ namespace Generator.Utils
         public static List<(OpenApiTag Tag, OpenApiString? Entity)> TagsByDocPath(OpenApiDocument doc)
         {
             var tags = new List<(OpenApiTag Tag, OpenApiString? Entity)>();
+            var seenTagNames = new HashSet<string>();
 
             if(doc.Paths != null)
             {
@@ -21,7 +23,7 @@ namespace Generator.Utils
                     {
                         foreach (var tag in operation.Value.Tags)
                         {
-                            if (!tags.Exists(x => x.Tag.Name.Equals(tag.Name)))
+                            if (seenTagNames.Add(tag.Name))
                             {
                                 tags.Add((tag, entity));
                             }
@@ -29,7 +31,7 @@ namespace Generator.Utils
                     }
                 }
             }
-            
+
             return tags;
         }
 
@@ -80,8 +82,8 @@ namespace Generator.Utils
 
         public static OpenApiObject GetApiGenModelsOrDefault(OpenApiDocument doc)
         {
-            if (doc?.Components?.Extensions != null &&
-                doc.Components.Extensions.TryGetValue("x-apigen-models", out var extensionValue) &&
+            if (doc?.Components?.Extensions is { Count: > 0 } extensions &&
+                extensions.TryGetValue("x-apigen-models", out var extensionValue) &&
                 extensionValue is OpenApiObject apiObject)
             {
                 return apiObject;
@@ -90,6 +92,24 @@ namespace Generator.Utils
             {
                 ["Sample"] = new OpenApiObject()
             };
+        }
+
+        public static DatabaseType GetDatabaseType(OpenApiDocument doc)
+        {
+            if (doc?.Extensions != null &&
+                doc.Extensions.TryGetValue("x-apigen-project", out var projectExt) &&
+                projectExt is OpenApiObject projectObj &&
+                projectObj.TryGetValue("data-driver", out var driverVal) &&
+                driverVal is OpenApiString driverStr)
+            {
+                return driverStr.Value.ToLower() switch
+                {
+                    "postgresql" => DatabaseType.POSTGRESQL,
+                    "mysql" => DatabaseType.MYSQL,
+                    _ => DatabaseType.MEMORY
+                };
+            }
+            return DatabaseType.MEMORY;
         }
 
     }

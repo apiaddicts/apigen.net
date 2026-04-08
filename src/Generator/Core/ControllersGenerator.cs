@@ -308,9 +308,9 @@ namespace Generator.Core
 
         private static string BuildGetParameters(OpenApiOperation operation)
         {
-            var paramMap = operation.Parameters.ToDictionary(p => p.Name.ToLower(), p => p.Name.CleanString().Camelize());
+            var paramMap = operation.Parameters.ToDictionary(p => p.Name.CleanString().ToLower(), p => p.Name.CleanString().Camelize());
             
-            var init = paramMap.ContainsKey("init") ? paramMap["init"] : "0";
+            var init = paramMap.ContainsKey("init") ? paramMap["init"] : "1";
             var limit = paramMap.ContainsKey("limit") ? paramMap["limit"] : "10";
             var total = paramMap.ContainsKey("total") ? paramMap["total"] : "false";
             var orderby = paramMap.ContainsKey("orderby") ? paramMap["orderby"] : "null";
@@ -324,7 +324,7 @@ namespace Generator.Core
 
         private static string BuildGetByIdParameters(OpenApiOperation operation, string id)
         {
-            var paramMap = operation.Parameters.ToDictionary(p => p.Name.ToLower(), p => p.Name.CleanString().Camelize());
+            var paramMap = operation.Parameters.ToDictionary(p => p.Name.CleanString().ToLower(), p => p.Name.CleanString().Camelize());
             
             var select = paramMap.ContainsKey("select") ? paramMap["select"] : "null";
             var exclude = paramMap.ContainsKey("exclude") ? paramMap["exclude"] : "null";

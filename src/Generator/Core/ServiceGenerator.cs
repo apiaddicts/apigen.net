@@ -89,8 +89,7 @@ namespace Generator.Core
                     {
                         var keyProperty = typeof(T).GetProperties().SingleOrDefault(p => p.GetCustomAttributes(typeof(KeyAttribute), false).Length != 0)
                             ?? throw new CustomException($"{typeof(T).Name} Not Key Property", 405, "E405");
-                        var result = repository.Get().AsNoTracking().Where($"{keyProperty.Name}.Equals(\"{id}\")");
-                        return result ?? throw new CustomException($"{typeof(T).Name} Not Found with: '{id}'", 404, "E404");
+                        return repository.Get().AsNoTracking().Where($"{keyProperty.Name} == @0", (object)id);
                     }
                     public virtual async Task<T> GetById(dynamic id, List<string>? select = null, List<string>? exclude = null, List<string>? expand = null)
                     {
@@ -103,7 +102,8 @@ namespace Generator.Core
                             .TrySelect(select)
                             .TryExclude(exclude);
 
-                            return await result.FirstAsync();
+                            var found = await result.FirstOrDefaultAsync();
+                            return found ?? throw new CustomException($"{typeof(T).Name} Not Found with: '{id}'", 404, "E404");
                         }
 
                         return await SimpleGetById(id);

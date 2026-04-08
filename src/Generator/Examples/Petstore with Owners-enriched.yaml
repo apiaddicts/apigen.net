@@ -1,0 +1,838 @@
+openapi: 3.0.4
+info:
+  title: Petstore with Owners
+  description: A sample API for managing pets, owners and veterinary visits
+  version: 1.0.0
+x-apigen-project:
+  name: Petstore with Owners
+  description: A sample API for managing pets, owners and veterinary visits
+  version: 1.0.0
+  data-driver: postgresql
+  java-properties:
+    group-id: the.app
+    artifact-id: pwts
+externalDocs:
+  description: Find out more about Swagger
+  url: https://swagger.io
+servers:
+  - url: /api/v3
+tags:
+  - name: pet
+    description: Everything about your Pets
+  - name: owner
+    description: Pet owners
+  - name: visit
+    description: Veterinary visits
+paths:
+  /pet:
+    x-apigen-binding:
+      model: Pet
+    post:
+      tags:
+        - pet
+      summary: Add a new pet to the store
+      operationId: addPet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetPost"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetResponse"
+    put:
+      tags:
+        - pet
+      summary: Update an existing pet
+      operationId: updatePet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetPut"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetResponse"
+  /pet/{petId}:
+    x-apigen-binding:
+      model: Pet
+      petId: Pet.id
+    get:
+      tags:
+        - pet
+      summary: Find pet by ID
+      operationId: getPetById
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetResponse"
+    delete:
+      tags:
+        - pet
+      summary: Deletes a pet
+      operationId: deletePet
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Pet deleted
+  /owner:
+    x-apigen-binding:
+      model: Owner
+    post:
+      tags:
+        - owner
+      summary: Add a new owner
+      operationId: addOwner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OwnerPost"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerResponse"
+    put:
+      tags:
+        - owner
+      summary: Update an existing owner
+      operationId: updateOwner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OwnerPut"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerResponse"
+  /owner/{ownerId}:
+    x-apigen-binding:
+      model: Owner
+      ownerId: Owner.id
+    get:
+      tags:
+        - owner
+      summary: Find owner by ID
+      operationId: getOwnerById
+      parameters:
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerResponse"
+    delete:
+      tags:
+        - owner
+      summary: Deletes an owner
+      operationId: deleteOwner
+      parameters:
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Owner deleted
+  /visit:
+    x-apigen-binding:
+      model: Visit
+    post:
+      tags:
+        - visit
+      summary: Register a new veterinary visit
+      operationId: addVisit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VisitPost"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitResponse"
+    put:
+      tags:
+        - visit
+      summary: Update an existing visit
+      operationId: updateVisit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VisitPut"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitResponse"
+  /visit/{visitId}:
+    x-apigen-binding:
+      model: Visit
+      visitId: Visit.id
+    get:
+      tags:
+        - visit
+      summary: Find visit by ID
+      operationId: getVisitById
+      parameters:
+        - name: visitId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitResponse"
+    delete:
+      tags:
+        - visit
+      summary: Deletes a visit
+      operationId: deleteVisit
+      parameters:
+        - name: visitId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Visit deleted
+components:
+  x-apigen-models:
+    Owner:
+      attributes:
+        - name: email
+          type: String
+          validations:
+            - type: Size
+              max: 200
+        - name: firstName
+          type: String
+          validations:
+            - type: NotNull
+            - type: Size
+              max: 100
+        - name: id
+          type: Long
+          relational-persistence:
+            primary-key: true
+            autogenerated: true
+        - name: lastName
+          type: String
+          validations:
+            - type: Size
+              max: 100
+        - name: phone
+          type: String
+          validations:
+            - type: Size
+              max: 50
+        - name: pets2
+          type: Array
+          items-type: Pet
+          relational-persistence:
+            foreign-column: owner_id
+      relational-persistence:
+        table: owner2
+    Pet:
+      attributes:
+        - name: id
+          type: Long
+          relational-persistence:
+            primary-key: true
+            autogenerated: true
+        - name: name
+          type: String
+          validations:
+            - type: NotNull
+            - type: Size
+              max: 255
+        - name: photoUrls
+          type: String
+          validations:
+            - type: Size
+              max: 255
+        - name: status
+          type: String
+          validations:
+            - type: Size
+              max: 50
+        - name: owner
+          type: Owner
+          relational-persistence:
+            column: owner_id
+        - name: visit2
+          type: Array
+          items-type: Visit
+          relational-persistence:
+            foreign-column: pet_id
+      relational-persistence:
+        table: pets2
+    Visit:
+      attributes:
+        - name: id
+          type: Long
+          relational-persistence:
+            primary-key: true
+            autogenerated: true
+        - name: notes
+          type: String
+          validations:
+            - type: Size
+              max: 255
+        - name: reason
+          type: String
+          validations:
+            - type: Size
+              max: 200
+        - name: visitDate
+          type: LocalDate
+          validations:
+            - type: NotNull
+        - name: pet
+          type: Pet
+          relational-persistence:
+            column: pet_id
+      relational-persistence:
+        table: visit2
+  schemas:
+    Pet:
+      x-apigen-mapping:
+        model: Pet
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        name:
+          type: string
+          example: doggie
+          x-apigen-mapping:
+            field: name
+        status:
+          type: string
+          enum: &a1
+            - available
+            - pending
+            - sold
+          x-apigen-mapping:
+            field: status
+        owner:
+          $ref: "#/components/schemas/OwnerSimple"
+          x-apigen-mapping:
+            field: owner
+    Owner:
+      x-apigen-mapping:
+        model: Owner
+      type: object
+      required:
+        - first_name
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        first_name:
+          type: string
+          example: John
+          x-apigen-mapping:
+            field: firstName
+        last_name:
+          type: string
+          example: Doe
+          x-apigen-mapping:
+            field: lastName
+        email:
+          type: string
+          example: john@example.com
+          x-apigen-mapping:
+            field: email
+        phone:
+          type: string
+          example: 555-1234
+          x-apigen-mapping:
+            field: phone
+    Visit:
+      x-apigen-mapping:
+        model: Visit
+      type: object
+      required:
+        - visit_date
+        - pet
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        visit_date:
+          type: string
+          format: date
+          example: 2026-02-11
+          x-apigen-mapping:
+            field: visitDate
+        reason:
+          type: string
+          example: Annual checkup
+          x-apigen-mapping:
+            field: reason
+        notes:
+          type: string
+          example: Healthy condition
+          x-apigen-mapping:
+            field: notes
+        pet:
+          $ref: "#/components/schemas/PetSimple"
+          x-apigen-mapping:
+            field: pet
+    OwnerSimple:
+      x-apigen-mapping:
+        model: Owner
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        first_name:
+          type: string
+          example: John
+          x-apigen-mapping:
+            field: firstName
+        last_name:
+          type: string
+          example: Doe
+          x-apigen-mapping:
+            field: lastName
+        email:
+          type: string
+          example: john@example.com
+          x-apigen-mapping:
+            field: email
+        phone:
+          type: string
+          example: 555-1234
+          x-apigen-mapping:
+            field: phone
+    PetSimple:
+      x-apigen-mapping:
+        model: Pet
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        name:
+          type: string
+          example: doggie
+          x-apigen-mapping:
+            field: name
+        status:
+          type: string
+          enum: *a1
+          x-apigen-mapping:
+            field: status
+    VisitSimple:
+      x-apigen-mapping:
+        model: Visit
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        visit_date:
+          type: string
+          format: date
+          example: 2026-02-11
+          x-apigen-mapping:
+            field: visitDate
+        reason:
+          type: string
+          example: Annual checkup
+          x-apigen-mapping:
+            field: reason
+        notes:
+          type: string
+          example: Healthy condition
+          x-apigen-mapping:
+            field: notes
+    PetPost:
+      x-apigen-mapping:
+        model: Pet
+        method: post
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        name:
+          type: string
+          example: doggie
+          x-apigen-mapping:
+            field: name
+        status:
+          type: string
+          enum:
+            - available
+            - pending
+            - sold
+          x-apigen-mapping:
+            field: status
+        owner:
+          $ref: "#/components/schemas/OwnerSimple"
+          x-apigen-mapping:
+            field: owner
+    PetPut:
+      x-apigen-mapping:
+        model: Pet
+        method: put
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        name:
+          type: string
+          example: doggie
+          x-apigen-mapping:
+            field: name
+        status:
+          type: string
+          enum:
+            - available
+            - pending
+            - sold
+          x-apigen-mapping:
+            field: status
+        owner:
+          $ref: "#/components/schemas/OwnerSimple"
+          x-apigen-mapping:
+            field: owner
+    PetGet:
+      x-apigen-mapping:
+        model: Pet
+        method: get
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        name:
+          type: string
+          example: doggie
+          x-apigen-mapping:
+            field: name
+        status:
+          type: string
+          enum:
+            - available
+            - pending
+            - sold
+          x-apigen-mapping:
+            field: status
+        owner:
+          $ref: "#/components/schemas/OwnerSimple"
+          x-apigen-mapping:
+            field: owner
+    OwnerPost:
+      x-apigen-mapping:
+        model: Owner
+        method: post
+      type: object
+      required:
+        - first_name
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        first_name:
+          type: string
+          example: John
+          x-apigen-mapping:
+            field: firstName
+        last_name:
+          type: string
+          example: Doe
+          x-apigen-mapping:
+            field: lastName
+        email:
+          type: string
+          example: john@example.com
+          x-apigen-mapping:
+            field: email
+        phone:
+          type: string
+          example: 555-1234
+          x-apigen-mapping:
+            field: phone
+    OwnerPut:
+      x-apigen-mapping:
+        model: Owner
+        method: put
+      type: object
+      required:
+        - first_name
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        first_name:
+          type: string
+          example: John
+          x-apigen-mapping:
+            field: firstName
+        last_name:
+          type: string
+          example: Doe
+          x-apigen-mapping:
+            field: lastName
+        email:
+          type: string
+          example: john@example.com
+          x-apigen-mapping:
+            field: email
+        phone:
+          type: string
+          example: 555-1234
+          x-apigen-mapping:
+            field: phone
+    OwnerGet:
+      x-apigen-mapping:
+        model: Owner
+        method: get
+      type: object
+      required:
+        - first_name
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        first_name:
+          type: string
+          example: John
+          x-apigen-mapping:
+            field: firstName
+        last_name:
+          type: string
+          example: Doe
+          x-apigen-mapping:
+            field: lastName
+        email:
+          type: string
+          example: john@example.com
+          x-apigen-mapping:
+            field: email
+        phone:
+          type: string
+          example: 555-1234
+          x-apigen-mapping:
+            field: phone
+    VisitPost:
+      x-apigen-mapping:
+        model: Visit
+        method: post
+      type: object
+      required:
+        - visit_date
+        - pet
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        visit_date:
+          type: string
+          format: date
+          example: 2026-02-11
+          x-apigen-mapping:
+            field: visitDate
+        reason:
+          type: string
+          example: Annual checkup
+          x-apigen-mapping:
+            field: reason
+        notes:
+          type: string
+          example: Healthy condition
+          x-apigen-mapping:
+            field: notes
+        pet:
+          $ref: "#/components/schemas/PetSimple"
+          x-apigen-mapping:
+            field: pet
+    VisitPut:
+      x-apigen-mapping:
+        model: Visit
+        method: put
+      type: object
+      required:
+        - visit_date
+        - pet
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        visit_date:
+          type: string
+          format: date
+          example: 2026-02-11
+          x-apigen-mapping:
+            field: visitDate
+        reason:
+          type: string
+          example: Annual checkup
+          x-apigen-mapping:
+            field: reason
+        notes:
+          type: string
+          example: Healthy condition
+          x-apigen-mapping:
+            field: notes
+        pet:
+          $ref: "#/components/schemas/PetSimple"
+          x-apigen-mapping:
+            field: pet
+    VisitGet:
+      x-apigen-mapping:
+        model: Visit
+        method: get
+      type: object
+      required:
+        - visit_date
+        - pet
+      properties:
+        id:
+          type: integer
+          format: int64
+          x-apigen-mapping:
+            field: id
+        visit_date:
+          type: string
+          format: date
+          example: 2026-02-11
+          x-apigen-mapping:
+            field: visitDate
+        reason:
+          type: string
+          example: Annual checkup
+          x-apigen-mapping:
+            field: reason
+        notes:
+          type: string
+          example: Healthy condition
+          x-apigen-mapping:
+            field: notes
+        pet:
+          $ref: "#/components/schemas/PetSimple"
+          x-apigen-mapping:
+            field: pet
+    OwnerResponse:
+      type: object
+      properties:
+        result:
+          type: object
+        data:
+          $ref: "#/components/schemas/OwnerGet"
+    PetResponse:
+      type: object
+      properties:
+        result:
+          type: object
+        data:
+          $ref: "#/components/schemas/PetGet"
+    VisitResponse:
+      type: object
+      properties:
+        result:
+          type: object
+        data:
+          $ref: "#/components/schemas/VisitGet"

@@ -68,6 +68,7 @@ namespace Generator.Core
             w.WriteLine($$"""
             using Context;
             using Microsoft.EntityFrameworkCore;
+            using System.ComponentModel.DataAnnotations;
 
             namespace Repositories
             {
@@ -106,7 +107,11 @@ namespace Generator.Core
                     }
                     public virtual async Task<T> GetById(dynamic id)
                     {
-                        return await dbSet.FindAsync(id);
+                        var keyProperty = typeof(T).GetProperties().SingleOrDefault(p => p.GetCustomAttributes(typeof(KeyAttribute), false).Length != 0)
+                            ?? throw new Exception($"{typeof(T).Name} has no Key property");
+                        var keyType = Nullable.GetUnderlyingType(keyProperty.PropertyType) ?? keyProperty.PropertyType;
+                        var convertedId = Convert.ChangeType(id, keyType);
+                        return await dbSet.FindAsync(convertedId);
                     }
                 }
             }

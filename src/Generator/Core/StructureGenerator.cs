@@ -1,4 +1,5 @@
 ﻿using CodegenCS;
+using Generator.Enums;
 using Generator.Utils;
 using Humanizer;
 using Serilog;
@@ -38,12 +39,12 @@ namespace Generator.Core
 
 
 
-        public static void Generator(string tempFilePath, string projectName, string projectId, string fileName)
+        public static void Generator(string tempFilePath, string projectName, string projectId, string fileName, DatabaseType dbType = DatabaseType.MEMORY)
         {
             Log.Debug("Generating ~ Structure: {ProjectName}: {ProjectId}", projectName, projectId);
             GenerateSln(tempFilePath, projectName, projectId).SaveToFile();
-            GenerateCsProj(tempFilePath, fileName);
-            InitProgram(tempFilePath, projectName, fileName).SaveToFile();
+            GenerateCsProj(tempFilePath, fileName, dbType);
+            InitProgram(tempFilePath, projectName, fileName, dbType).SaveToFile();
         }
 
         public static (ICodegenOutputFile, string?) GenerateSln(string tempFilePath, string projectName, string projectGuid)
@@ -116,10 +117,10 @@ namespace Generator.Core
 
         }
 
-        public static void GenerateCsProj(string tempFilePath, string fileName)
+        public static void GenerateCsProj(string tempFilePath, string fileName, DatabaseType dbType = DatabaseType.MEMORY)
         {
             Log.Debug($"Generating ~ CsProj");
-            (InitCsProjWeb(fileName), $"{tempFilePath}/src/Api/")
+            (InitCsProjWeb(fileName, dbType), $"{tempFilePath}/src/Api/")
                 .SaveToFile();
 
             (InitCsProjDomain(), $"{tempFilePath}/src/Domain/")
@@ -139,32 +140,42 @@ namespace Generator.Core
 
         }
 
-        private static ICodegenOutputFile InitCsProjWeb(string fileName)
+        private static ICodegenOutputFile InitCsProjWeb(string fileName, DatabaseType dbType)
         {
             var ctx = new CodegenContext();
             var w = ctx[$"{Layers["Api"]}.csproj"];
 
+            var npgsqlVersion = NugetVersions["Npgsql.EntityFrameworkCore.PostgreSQL"];
+            var mysqlVersion = NugetVersions["Pomelo.EntityFrameworkCore.MySql"];
+            var inMemoryVersion = NugetVersions["Microsoft.EntityFrameworkCore.InMemory"];
+            var dbPackageLine = dbType switch
+            {
+                DatabaseType.POSTGRESQL => $"<PackageReference Include=\"Npgsql.EntityFrameworkCore.PostgreSQL\" Version =\"{npgsqlVersion}\" />",
+                DatabaseType.MYSQL => $"<PackageReference Include=\"Pomelo.EntityFrameworkCore.MySql\" Version =\"{mysqlVersion}\" />",
+                _ => $"<PackageReference Include=\"Microsoft.EntityFrameworkCore.InMemory\" Version =\"{inMemoryVersion}\" />"
+            };
+
             w.WriteLine($$"""
             <Project Sdk="Microsoft.NET.Sdk.Web">
-            	<PropertyGroup>
-            		<TargetFramework>{{TargetFramework}}</TargetFramework>
-            		<ImplicitUsings>enable</ImplicitUsings>
-            		<Nullable>enable</Nullable>
+                <PropertyGroup>
+                    <TargetFramework>{{TargetFramework}}</TargetFramework>
+                    <ImplicitUsings>enable</ImplicitUsings>
+                    <Nullable>enable</Nullable>
                     <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
-            	</PropertyGroup>
-            	<ItemGroup>
-            		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version ="{{NugetVersions["Microsoft.EntityFrameworkCore.InMemory"]}}" />
-            		<PackageReference Include="Swashbuckle.AspNetCore" Version="{{NugetVersions["Swashbuckle.AspNetCore"]}}" />
-            		<PackageReference Include="Serilog" Version="{{NugetVersions["Serilog"]}}" />
-            		<PackageReference Include="Serilog.Sinks.Console" Version ="{{NugetVersions["Serilog.Sinks.Console"]}}" />
-            		<PackageReference Include="Serilog.AspNetCore" Version ="{{NugetVersions["Serilog.AspNetCore"]}}" />
-            		<PackageReference Include="AutoMapper" Version ="{{NugetVersions["AutoMapper"]}}" />
-            		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="{{NugetVersions["Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore"]}}" />
-            	</ItemGroup>
-            	<ItemGroup>
-            		<ProjectReference Include="..\Domain\{{Layers["Domain"]}}.csproj" />
-            		<ProjectReference Include="..\Infrastructure\{{Layers["Infrastructure"]}}.csproj" />
-            	</ItemGroup>
+                </PropertyGroup>
+                <ItemGroup>
+                    {{dbPackageLine}}
+                    <PackageReference Include="Swashbuckle.AspNetCore" Version="{{NugetVersions["Swashbuckle.AspNetCore"]}}" />
+                    <PackageReference Include="Serilog" Version="{{NugetVersions["Serilog"]}}" />
+                    <PackageReference Include="Serilog.Sinks.Console" Version ="{{NugetVersions["Serilog.Sinks.Console"]}}" />
+                    <PackageReference Include="Serilog.AspNetCore" Version ="{{NugetVersions["Serilog.AspNetCore"]}}" />
+                    <PackageReference Include="AutoMapper" Version ="{{NugetVersions["AutoMapper"]}}" />
+                    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="{{NugetVersions["Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore"]}}" />
+                </ItemGroup>
+                <ItemGroup>
+                    <ProjectReference Include="..\Domain\{{Layers["Domain"]}}.csproj" />
+                    <ProjectReference Include="..\Infrastructure\{{Layers["Infrastructure"]}}.csproj" />
+                </ItemGroup>
                 <ItemGroup>
                   <Content Update="wwwroot\swagger\{{fileName}}">
                     <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -253,10 +264,17 @@ namespace Generator.Core
             return w;
         }
 
-        public static (ICodegenOutputFile, string?) InitProgram(string tempFilePath, string projectName, string fileName)
+        public static (ICodegenOutputFile, string?) InitProgram(string tempFilePath, string projectName, string fileName, DatabaseType dbType = DatabaseType.MEMORY)
         {
             var ctx = new CodegenContext();
             var w = ctx[$"Program.cs"];
+
+            var dbContextLine = dbType switch
+            {
+                DatabaseType.POSTGRESQL => "builder.Services.AddDbContext<ApiDbContext>(opt => opt.UseNpgsql(databaseUrlConnection), ServiceLifetime.Scoped, ServiceLifetime.Scoped);",
+                DatabaseType.MYSQL => "builder.Services.AddDbContext<ApiDbContext>(opt => opt.UseMySql(databaseUrlConnection, ServerVersion.AutoDetect(databaseUrlConnection)), ServiceLifetime.Scoped, ServiceLifetime.Scoped);",
+                _ => "builder.Services.AddDbContext<ApiDbContext>(opt => opt.UseInMemoryDatabase(databaseName: databaseUrlConnection), ServiceLifetime.Scoped, ServiceLifetime.Scoped);"
+            };
 
             w.WriteLine($$"""
             using Microsoft.EntityFrameworkCore;
@@ -277,7 +295,7 @@ namespace Generator.Core
 
                         var builder = WebApplication.CreateBuilder(args);
 
-                        builder.Services.AddDbContext<ApiDbContext>(opt => opt.UseInMemoryDatabase(databaseName: databaseUrlConnection), ServiceLifetime.Scoped, ServiceLifetime.Scoped);
+                        {{dbContextLine}}
 
                         builder.Services
                             .AddControllers(o => o.Filters.Add(new HttpResponseExceptionFilter()))
