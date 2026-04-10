@@ -36,7 +36,7 @@ namespace Test.Generators
             StructureGenerator.Generator(_tempFilePath, projectName, projectId, projectName);
             CreateStaticFiles.Generate(_tempFilePath, projectName, projectId);
             ServiceRegistryGenerator.Generator(doc, _tempFilePath).SaveToFile();
-            HttpResponseExceptionFilterGenerator.Generator(_tempFilePath).SaveToFile();
+            HttpResponseExceptionFilterGenerator.Generator(_tempFilePath, projectName).SaveToFile();
             GetDirectoryContents(_tempFilePath);
         }
 
@@ -93,16 +93,17 @@ namespace Test.Generators
         public void TestGeneratorTest()
         {
             TestGenerator.Generator(doc, _tempFilePath);
-            AnalysisFiles(GetDirectoryContents($"{_tempFilePath}/test/UnitTest"));
+            AnalysisFiles(GetDirectoryContents($"{_tempFilePath}/test"));
         }
 
         [Fact]
         public void UtilsGeneratorTest()
         {
-            ApigenOperationsGenerator.Generator(_tempFilePath).SaveToFile();
-            StringUtilsGenerator.Generator(_tempFilePath).SaveToFile();
-            CustomExceptionGenerator.Generator(_tempFilePath).SaveToFile();
-            PageResponseGenerator.Generator(_tempFilePath).SaveToFile();
+            var projectName = "test";
+            ApigenOperationsGenerator.Generator(_tempFilePath, projectName).SaveToFile();
+            StringUtilsGenerator.Generator(_tempFilePath, projectName).SaveToFile();
+            CustomExceptionGenerator.Generator(_tempFilePath, projectName).SaveToFile();
+            PageResponseGenerator.Generator(_tempFilePath, projectName).SaveToFile();
             AnalysisFiles(GetDirectoryContents($"{_tempFilePath}/src/Domain/Utils"));
         }
 

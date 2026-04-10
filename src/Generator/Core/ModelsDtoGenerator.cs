@@ -21,18 +21,17 @@ namespace Generator.Core
                 Log.Debug("Generating Dto Models");
                 foreach (var schema in doc.Components.Schemas)
                 {
-                    // Skip schemas that are just primitive types with constraints (like enums)
-                    // These should not generate separate classes
                     bool isPrimitiveSchema = schema.Value.Type != null && 
                                              (schema.Value.Properties.Count == 0 && schema.Value.AllOf.Count == 0) &&
                                              (schema.Value.Type == "integer" || schema.Value.Type == "number" || 
                                               schema.Value.Type == "string" || schema.Value.Type == "boolean");
-                    
+
                     if ((schema.Value.Properties.Count > 0 || schema.Value.AllOf.Count > 0) &&
                         !schema.Key.Pascalize().Contains("Standard", StringComparison.CurrentCultureIgnoreCase) &&
                         !isPrimitiveSchema)
                     {
-                        GenerateModels(schema, "Models", tempFilePath).SaveToFile(save);
+                        string projectName = OpenApiUtils.GetProjectName(doc);
+                        GenerateModels(schema, $"{projectName}.Domain.Models", tempFilePath).SaveToFile(save);
                     }
                 }
             }
@@ -87,7 +86,7 @@ namespace Generator.Core
                 if (schema.Required.Contains(property.Key))
                     writer.WriteLine("[Required]");
 
-                WriteValidations(writer, property.Value);
+                WriteValidations(writer, property.Value, type);
 
                 writer.WriteLine($"public {type} {propertyName} {{ get; set; }}");
             }
@@ -97,14 +96,11 @@ namespace Generator.Core
         {
             if (property.Reference != null)
             {
-                // Check if the referenced schema is actually a primitive type
-                // In OpenAPI, schemas ending with "Schema" that have a primitive type should use the base type
-                if (property.Type != null && !string.IsNullOrEmpty(property.Type))
-                {
-                    // The reference has an inline type definition, use that instead
-                    return FormatType(property.Type);
-                }
-                return $"{property.Reference.Id.Pascalize()}";
+                // Only use the inline type when it is a known primitive (not "object", which just means "it's a class")
+                if (property.Type != null && !string.IsNullOrEmpty(property.Type) && property.Type != "object")
+                    return FormatType(property.Type, property.Format);
+
+                return $"{property.Reference.Id.Pascalize()}?";
             }
             if (property.Items != null)
             {
@@ -114,17 +110,20 @@ namespace Generator.Core
                     return $"List<{FormatType(property.Items.Type).TrimEnd('?')}>";
                 return "List<object>";
             }
-            return FormatType(property.Type);
+            return FormatType(property.Type, property.Format);
         }
 
-        private static void WriteValidations(ICodegenOutputFile writer, OpenApiSchema schema)
+        private static void WriteValidations(ICodegenOutputFile writer, OpenApiSchema schema, string type)
         {
-            if (schema.MaxLength != null && schema.MinLength != null)
+            if (type == "string?" && schema.MaxLength != null && schema.MinLength != null)
                 writer.WriteLine($"[StringLength({schema.MaxLength}, MinimumLength = {schema.MinLength})]");
             if (schema.Maximum != null && schema.Minimum != null)
                 writer.WriteLine($"[Range({schema.Minimum}, {schema.Maximum})]");
             if (schema.Format != null && schema.Type == "string")
-                writer.WriteLine("[DataType(DataType.Date)]");
+            {
+                bool isDateTime = schema.Format.Equals("date-time", StringComparison.OrdinalIgnoreCase);
+                writer.WriteLine(isDateTime ? "[DataType(DataType.DateTime)]" : "[DataType(DataType.Date)]");
+            }
         }
     }
 }

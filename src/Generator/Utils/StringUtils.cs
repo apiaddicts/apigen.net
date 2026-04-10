@@ -33,7 +33,7 @@ namespace Generator.Utils
                     return "bool?";
                 case "localdate":
                 case "localdatetime":
-                case "string" when format != null && format.Equals("date"):
+                case "string" when format != null && (format.Equals("date", StringComparison.OrdinalIgnoreCase) || format.Equals("date-time", StringComparison.OrdinalIgnoreCase)):
                     return "DateTime?";
                 case "string":
                     return "string?";

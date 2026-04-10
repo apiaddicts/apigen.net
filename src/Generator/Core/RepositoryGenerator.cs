@@ -23,28 +23,30 @@ namespace Generator.Core
         {
 
             Log.Debug($"Generating ~ Repositories");
-            IBaseRepositoryGenerator(tempFilePath).SaveToFile();
-            BaseRepositoryGenerator(tempFilePath).SaveToFile();
+            string projectName = OpenApiUtils.GetProjectName(doc);
+            string projectNs = $"{projectName}.Infrastructure.Repositories";
+            IBaseRepositoryGenerator(tempFilePath, projectName).SaveToFile();
+            BaseRepositoryGenerator(tempFilePath, projectName).SaveToFile();
             var apigenModels = OpenApiUtils.GetApiGenModelsOrDefault(doc);
 
             if (apigenModels != null)
             {
                 foreach (var entity in apigenModels)
                 {
-                    GenerateRepository(entity, ns, tempFilePath).SaveToFile(save);
+                    GenerateRepository(entity, projectNs, tempFilePath, projectName).SaveToFile(save);
                 }
             }
 
         }
 
         public static (ICodegenOutputFile, string?) GenerateRepository(KeyValuePair<string, IOpenApiAny> entity,
-            string ns, string tempFilePath)
+            string ns, string tempFilePath, string projectName = "")
         {
             string cl = $"{entity.Key.Pascalize()}";
             var ctx = new CodegenContext();
             var w = ctx[$"{cl}Repository.cs"];
-            w.WriteLine("using Entities;");
-            w.WriteLine("using Context;\n");
+            w.WriteLine($"using {projectName}.Infrastructure.Entities;");
+            w.WriteLine($"using {projectName}.Infrastructure.Context;\n");
             w.WithCurlyBraces($"namespace {ns}", () =>
             {
                 w.WithCurlyBraces($"public class {cl}Repository : BaseRepository<{cl}>", () =>
@@ -60,17 +62,17 @@ namespace Generator.Core
         /// Repository pattern from which it extends, defined by apigen.
         /// </summary>
         /// <param name="tempFilePath"></param>
-        private static (ICodegenOutputFile, string?) BaseRepositoryGenerator(string tempFilePath)
+        private static (ICodegenOutputFile, string?) BaseRepositoryGenerator(string tempFilePath, string projectName)
         {
             var ctx = new CodegenContext();
             var w = ctx[$"BaseRepository.cs"];
 
             w.WriteLine($$"""
-            using Context;
+            using {{projectName}}.Infrastructure.Context;
             using Microsoft.EntityFrameworkCore;
             using System.ComponentModel.DataAnnotations;
 
-            namespace Repositories
+            namespace {{projectName}}.Infrastructure.Repositories
             {
                 public class BaseRepository<T> : IBaseRepository<T> where T : class
                 {
@@ -121,13 +123,13 @@ namespace Generator.Core
 
         }
 
-        private static (ICodegenOutputFile, string?) IBaseRepositoryGenerator(string tempFilePath)
+        private static (ICodegenOutputFile, string?) IBaseRepositoryGenerator(string tempFilePath, string projectName)
         {
             var ctx = new CodegenContext();
             var w = ctx[$"IBaseRepository.cs"];
 
             w.WriteLine($$"""
-            namespace Repositories
+            namespace {{projectName}}.Infrastructure.Repositories
             {
                 public interface IBaseRepository<T> where T : class
                 {

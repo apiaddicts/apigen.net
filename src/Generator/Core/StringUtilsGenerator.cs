@@ -7,7 +7,7 @@ namespace Generator.Core
     {
         private static readonly string cl = $"StringUtils";
 
-        public static (ICodegenOutputFile, string?) Generator(string tempFilePath)
+        public static (ICodegenOutputFile, string?) Generator(string tempFilePath, string projectName)
         {
             Log.Debug("Adding ~ {Class}", cl);
 
@@ -17,7 +17,7 @@ namespace Generator.Core
             w.WriteLine($$"""
             using System.Linq.Expressions;
 
-            namespace Utils
+            namespace {{projectName}}.Domain.Utils
             {
                 public static class StringUtils
                 {

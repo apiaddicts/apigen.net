@@ -19,48 +19,80 @@ namespace Generator.Core
         {
             Log.Debug($"Generating ~ Controllers");
             var tags = TagsByDocPath(doc);
-            string ns = "Controllers";
+            string projectName = OpenApiUtils.GetProjectName(doc);
+            string ns = $"{projectName}.Api.Controllers";
 
             foreach (var tag in tags)
             {
-                GenerateControllerForTag(tag, ns, doc, tempFilePath).SaveToFile();
+                GenerateControllerForTag(tag, ns, doc, tempFilePath, projectName).SaveToFile();
             }
 
             if (tags.Count == 0)
             {
-                GenerateControllerForTag((new OpenApiTag() { Name = defaultTag }, null), ns, doc, tempFilePath).SaveToFile();
+                GenerateControllerForTag((new OpenApiTag() { Name = defaultTag }, null), ns, doc, tempFilePath, projectName).SaveToFile();
             }
         }
 
-        private static (ICodegenOutputFile, string?) GenerateControllerForTag((OpenApiTag Tag, OpenApiString? Entity) tag, string ns, OpenApiDocument doc, string tempFilePath)
+        private static (ICodegenOutputFile, string?) GenerateControllerForTag((OpenApiTag Tag, OpenApiString? Entity) tag, string ns, OpenApiDocument doc, string tempFilePath, string projectName)
         {
             string className = $"{tag.Tag.Name.Pascalize()}Controller";
             var context = new CodegenContext();
             var writer = context[$"{className}.cs"];
             var servicesAlreadyInjected = new List<string>();
 
-            DefineControllerUsingStatements(writer);
-            DefineControllerNamespace(writer, ns, className, doc, tag, servicesAlreadyInjected);
+            var (hasServices, hasModels, hasEntities) = ScanRequiredUsings(doc, tag, servicesAlreadyInjected);
+            DefineControllerUsingStatements(writer, projectName, hasServices, hasModels, hasEntities);
+            DefineControllerNamespace(writer, ns, className, doc, tag, servicesAlreadyInjected, projectName);
 
-            return (writer, $"{tempFilePath}/src/Api/{ns}/");
+            return (writer, $"{tempFilePath}/src/Api/{ns.Split('.').Last()}/");
         }
 
-        private static void DefineControllerUsingStatements(ICodegenOutputFile writer)
+        private static (bool hasServices, bool hasModels, bool hasEntities) ScanRequiredUsings(OpenApiDocument doc, (OpenApiTag Tag, OpenApiString? Entity) tag, List<string> servicesAlreadyInjected)
+        {
+            bool hasModels = false;
+            bool hasEntities = false;
+
+            if (doc.Paths == null) return (false, false, false);
+
+            foreach (var path in doc.Paths)
+            {
+                if (path.Value.Operations.Values.Any(x => x.Tags.Contains(tag.Tag)))
+                    ReadModelInExtensions(path, servicesAlreadyInjected);
+
+                foreach (var operation in path.Value.Operations)
+                {
+                    if (!operation.Value.Tags.Contains(tag.Tag) && !tag.Tag.Name.Equals(defaultTag)) continue;
+
+                    if (operation.Value.RequestBody?.Content.TryGetValue("application/json", out var appJson) == true)
+                    {
+                        if (appJson.Schema?.Reference != null) hasModels = true;
+                        if (operation.Key is OperationType.Post or OperationType.Put or OperationType.Patch) hasEntities = true;
+                    }
+                }
+            }
+
+            return (servicesAlreadyInjected.Count > 0, hasModels, hasEntities);
+        }
+
+        private static void DefineControllerUsingStatements(ICodegenOutputFile writer, string projectName, bool hasServices, bool hasModels, bool hasEntities)
         {
             writer.WriteLine("using Microsoft.AspNetCore.Mvc;");
             writer.WriteLine("using AutoMapper;");
+            if (hasServices) writer.WriteLine($"using {projectName}.Domain.Services;");
+            if (hasModels)   writer.WriteLine($"using Models = {projectName}.Domain.Models;");
+            if (hasEntities) writer.WriteLine($"using Entities = {projectName}.Infrastructure.Entities;");
             writer.WriteLine();
         }
 
-        private static void DefineControllerNamespace(ICodegenOutputFile writer, string ns, string className, OpenApiDocument doc, (OpenApiTag Tag, OpenApiString? Entity) tag, List<string> servicesAlreadyInjected)
+        private static void DefineControllerNamespace(ICodegenOutputFile writer, string ns, string className, OpenApiDocument doc, (OpenApiTag Tag, OpenApiString? Entity) tag, List<string> servicesAlreadyInjected, string projectName)
         {
             writer.WithCurlyBraces($"namespace {ns}", () =>
             {
-                DefineControllerClass(writer, className, doc, tag, servicesAlreadyInjected);
+                DefineControllerClass(writer, className, doc, tag, servicesAlreadyInjected, projectName);
             });
         }
 
-        private static void DefineControllerClass(ICodegenOutputFile writer, string className, OpenApiDocument doc, (OpenApiTag Tag, OpenApiString? Entity) tag, List<string> servicesAlreadyInjected)
+        private static void DefineControllerClass(ICodegenOutputFile writer, string className, OpenApiDocument doc, (OpenApiTag Tag, OpenApiString? Entity) tag, List<string> servicesAlreadyInjected, string projectName)
         {
             writer.WriteLine("[ApiController]");
             writer.WriteLine("[Route(\"[controller]\")]");
@@ -68,31 +100,25 @@ namespace Generator.Core
 
             writer.WithCurlyBraces($"public class {className} : ControllerBase", () =>
             {
-                AddControllerConstructor(writer, className, doc, tag, servicesAlreadyInjected);
-                AddControllerEndpoints(writer, doc, tag, servicesAlreadyInjected);
+                AddControllerConstructor(writer, className, doc, tag, servicesAlreadyInjected, projectName);
+                AddControllerEndpoints(writer, doc, tag, servicesAlreadyInjected, projectName);
             });
         }
 
-        private static void AddControllerConstructor(ICodegenOutputFile writer, string className, OpenApiDocument doc, (OpenApiTag Tag, OpenApiString? Entity) tag, List<string> servicesAlreadyInjected)
+        private static void AddControllerConstructor(ICodegenOutputFile writer, string className, OpenApiDocument doc, (OpenApiTag Tag, OpenApiString? Entity) tag, List<string> servicesAlreadyInjected, string projectName)
         {
             if (doc.Paths!=null)
             {
-                foreach (var path in doc.Paths)
+                foreach (var service in servicesAlreadyInjected)
                 {
-                    var findTag = path.Value.Operations.Values.FirstOrDefault(x => x.Tags.Contains(tag.Tag));
-                    if (findTag != null)
-                    {
-                        var entity = ReadModelInExtensions(path, servicesAlreadyInjected);
-                        if (entity != null)
-                            writer.WriteLine($"private readonly Services.{entity}Service _{entity.Camelize()}Service;");
-                    }
+                    writer.WriteLine($"private readonly {service}Service _{service.Camelize()}Service;");
                 }
 
                 writer.WriteLine("private readonly IMapper _mapper;");
                 writer.Write($"public {className}(IMapper mapper");
                 foreach (var service in servicesAlreadyInjected)
                 {
-                    writer.Write($", Services.{service}Service {service.Camelize()}Service");
+                    writer.Write($", {service}Service {service.Camelize()}Service");
                 }
                 writer.WriteLine(")");
                 writer.WriteLine("{");
@@ -105,7 +131,7 @@ namespace Generator.Core
             }
         }
 
-        private static void AddControllerEndpoints(ICodegenOutputFile writer, OpenApiDocument doc, (OpenApiTag Tag, OpenApiString? Entity) tag, List<string> servicesAlreadyInjected)
+        private static void AddControllerEndpoints(ICodegenOutputFile writer, OpenApiDocument doc, (OpenApiTag Tag, OpenApiString? Entity) tag, List<string> servicesAlreadyInjected, string projectName)
         {
             if (doc.Paths != null)
             {
@@ -115,7 +141,7 @@ namespace Generator.Core
                     {
                         if (operation.Value.Tags.Contains(tag.Tag) || tag.Tag.Name.Equals(defaultTag))
                         {
-                            DefineEndpointMethod(writer, path.Key, operation, servicesAlreadyInjected);
+                            DefineEndpointMethod(writer, path.Key, operation, servicesAlreadyInjected, projectName);
                         }
                     }
                 }
@@ -123,10 +149,10 @@ namespace Generator.Core
 
         }
 
-        private static void DefineEndpointMethod(ICodegenOutputFile writer, string pathKey, KeyValuePair<OperationType, OpenApiOperation> operation, List<string> servicesAlreadyInjected)
+        private static void DefineEndpointMethod(ICodegenOutputFile writer, string pathKey, KeyValuePair<OperationType, OpenApiOperation> operation, List<string> servicesAlreadyInjected, string projectName)
         {
             writer.WriteLine($"[Http{operation.Key.ToString().Pascalize()}(\"{pathKey}\")]");
-            
+
             // Add [Consumes] attribute for file uploads
             if (operation.Value.RequestBody != null)
             {
@@ -140,13 +166,13 @@ namespace Generator.Core
                     writer.WriteLine($"[Consumes(\"application/octet-stream\")]");
                 }
             }
-            
-            writer.WithCurlyBraces($"public async Task<IActionResult> {operation.Value.OperationId.Pascalize()}({AddOperations(operation.Value)})", () =>
+
+            writer.WithCurlyBraces($"public async Task<IActionResult> {operation.Value.OperationId.Pascalize()}({AddOperations(operation.Value, projectName)})", () =>
             {
                 if (servicesAlreadyInjected.Count != 0)
                 {
                     var id = operation.Value.Parameters?.FirstOrDefault(x => x.In == ParameterLocation.Path)?.Name.Camelize();
-                    AddLogic(operation, servicesAlreadyInjected[0], writer, id);
+                    AddLogic(operation, servicesAlreadyInjected[0], writer, id, projectName);
                 }
                 else
                 {
@@ -171,7 +197,7 @@ namespace Generator.Core
             return null;
         }
 
-        private static string AddOperations(OpenApiOperation operation)
+        private static string AddOperations(OpenApiOperation operation, string projectName)
         {
             StringBuilder builder = new();
             foreach (var param in operation.Parameters)
@@ -229,13 +255,13 @@ namespace Generator.Core
             return "";
         }
 
-        private static void AddLogic(KeyValuePair<OperationType, OpenApiOperation> operation, string entity, ICodegenOutputFile writer, string? id)
+        private static void AddLogic(KeyValuePair<OperationType, OpenApiOperation> operation, string entity, ICodegenOutputFile writer, string? id, string projectName)
         {
             bool isFileUpload = operation.Value.RequestBody?.Content.ContainsKey("multipart/form-data") == true ||
                                 operation.Value.RequestBody?.Content.ContainsKey("application/octet-stream") == true;
             bool hasRequestBody = operation.Value.RequestBody != null && 
                                   operation.Value.RequestBody.Content.ContainsKey("application/json");
-            
+
             switch (operation.Key)
             {
                 case OperationType.Get when id == null:

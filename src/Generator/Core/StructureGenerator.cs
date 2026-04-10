@@ -76,11 +76,11 @@ namespace Generator.Core
             var guidInfrastructureTest = GuidId();
 
             w.WriteLine($$"""
-            Project("{{{projectGuid}}}") = "Api.Test", "test\UnitTest\Api\{{Layers["Api.Test"]}}.csproj", "{{{guidApiTest}}}"
+            Project("{{{projectGuid}}}") = "Api.Test", "test\Api\{{Layers["Api.Test"]}}.csproj", "{{{guidApiTest}}}"
             EndProject
-            Project("{{{projectGuid}}}") = "Domain.Test", "test\UnitTest\Domain\{{Layers["Domain.Test"]}}.csproj", "{{{guidDomainTest}}}"
+            Project("{{{projectGuid}}}") = "Domain.Test", "test\Domain\{{Layers["Domain.Test"]}}.csproj", "{{{guidDomainTest}}}"
             EndProject
-            Project("{{{projectGuid}}}") = "Infrastructure.Test", "test\UnitTest\Infrastructure\{{Layers["Infrastructure.Test"]}}.csproj", "{{{guidInfrastructureTest}}}"
+            Project("{{{projectGuid}}}") = "Infrastructure.Test", "test\Infrastructure\{{Layers["Infrastructure.Test"]}}.csproj", "{{{guidInfrastructureTest}}}"
             EndProject
             """);
 
@@ -129,13 +129,13 @@ namespace Generator.Core
             (InitCsProjInfrastructure(), $"{tempFilePath}/src/Infrastructure/")
                 .SaveToFile();
 
-            (InitCsProjTest(Layers["Api.Test"]), $"{tempFilePath}/test/UnitTest/Api/").
+            (InitCsProjTest(Layers["Api.Test"]), $"{tempFilePath}/test/Api/").
                 SaveToFile();
 
-            (InitCsProjTest(Layers["Domain.Test"]), $"{tempFilePath}/test/UnitTest/Domain/").
+            (InitCsProjTest(Layers["Domain.Test"]), $"{tempFilePath}/test/Domain/").
                 SaveToFile();
 
-            (InitCsProjTest(Layers["Infrastructure.Test"]), $"{tempFilePath}/test/UnitTest/Infrastructure/").
+            (InitCsProjTest(Layers["Infrastructure.Test"]), $"{tempFilePath}/test/Infrastructure/").
                 SaveToFile();
 
         }
@@ -254,9 +254,9 @@ namespace Generator.Core
                     <PackageReference Include="MockQueryable.Moq" Version="{{NugetVersions["MockQueryable.Moq"]}}" />
             	</ItemGroup>
             	<ItemGroup>
-            		<ProjectReference Include="..\..\..\src\Api\{{Layers["Api"]}}.csproj" />
-            		<ProjectReference Include="..\..\..\src\Domain\{{Layers["Domain"]}}.csproj" />
-            		<ProjectReference Include="..\..\..\src\Infrastructure\{{Layers["Infrastructure"]}}.csproj" />
+                    <ProjectReference Include="..\..\src\Api\{{Layers["Api"]}}.csproj" />
+                                <ProjectReference Include="..\..\src\Domain\{{Layers["Domain"]}}.csproj" />
+                                <ProjectReference Include="..\..\src\Infrastructure\{{Layers["Infrastructure"]}}.csproj" />
             	</ItemGroup>
             </Project>
             """);
@@ -279,11 +279,11 @@ namespace Generator.Core
             w.WriteLine($$"""
             using Microsoft.EntityFrameworkCore;
             using System.Text.Json.Serialization;
-            using Context;
-            using Helpers;
+            using {{projectName}}.Infrastructure.Context;
+            using {{projectName}}.Api.Helpers;
             using Serilog;
 
-            namespace Api
+            namespace {{projectName}}.Api
             {
                 public static class Program
                 {

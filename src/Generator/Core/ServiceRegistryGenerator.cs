@@ -15,11 +15,11 @@ namespace Generator.Core
         {
             Log.Debug("Generating Service Registry");
 
-
             var context = new CodegenContext();
             var writer = context[$"{className}.cs"];
-            writer.WriteLine("using Repositories;");
-            writer.WriteLine("using Services;\n");
+            string projectName = OpenApiUtils.GetProjectName(doc);
+            writer.WriteLine($"using {projectName}.Infrastructure.Repositories;");
+            writer.WriteLine($"using {projectName}.Domain.Services;\n");
             var apiGenModels = OpenApiUtils.GetApiGenModelsOrDefault(doc);
             writer.WithCurlyBraces($"namespace Microsoft.Extensions.DependencyInjection", () =>
             {

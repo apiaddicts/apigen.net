@@ -8,7 +8,7 @@ namespace Generator.Core
     {
         private readonly static string cl = $"RequestContextLoggingMiddleware";
 
-        public static (ICodegenOutputFile, string?) Generator(string tempFilePath)
+        public static (ICodegenOutputFile, string?) Generator(string tempFilePath, string projectName)
         {
             Log.Debug("Adding ~ {Class}", cl);
 
@@ -20,7 +20,7 @@ namespace Generator.Core
             using Serilog;
             using Serilog.Context;
 
-            namespace Helpers
+            namespace {{projectName}}.Api.Helpers
             {
                 public class RequestContextLoggingMiddleware(RequestDelegate next)
                 {

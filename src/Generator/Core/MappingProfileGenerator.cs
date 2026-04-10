@@ -1,4 +1,5 @@
 ﻿using CodegenCS;
+using Generator.Utils;
 using Humanizer;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
@@ -24,8 +25,9 @@ namespace Generator.Core
             var ctx = new CodegenContext();
             var w = ctx[$"{cl}.cs"];
             w.WriteLine("using AutoMapper;");
+            string projectName = OpenApiUtils.GetProjectName(doc);
 
-            w.WithCurlyBraces($"namespace Helpers", () =>
+            w.WithCurlyBraces($"namespace {projectName}.Api.Helpers", () =>
             {
                 w.WithCurlyBraces($"public class {cl} : Profile", () =>
                 {
@@ -39,7 +41,7 @@ namespace Generator.Core
                             var entity = ReadModelInExtensions(schema);
                             if (entity != null)
                             {
-                                w.WriteLine($"CreateMap<Models.{dto}, Entities.{entity.Value}>();");
+                                w.WriteLine($"CreateMap<{projectName}.Domain.Models.{dto}, {projectName}.Infrastructure.Entities.{entity.Value}>();");
                             }
 
                         }

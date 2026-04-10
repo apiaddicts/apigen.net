@@ -29,7 +29,7 @@ namespace Generator
             var projectId = GuidId();
             //1. Read OpenApi
             var doc = ReadOpenApi(file, fileName);
-            var projectName = doc.Info.Title.Replace(" ", "");
+            var projectName = OpenApiUtils.GetProjectName(doc);
             var projectDescription = doc.Info.Description;
             
 
@@ -58,13 +58,13 @@ namespace Generator
 
             Log.Debug($"...........................................................");
             //5. Adding
-            HttpResponseExceptionFilterGenerator.Generator(tempFilePath).SaveToFile();
-            RequestContextLoggingMiddlewareGenerator.Generator(tempFilePath).SaveToFile();
-            PageResponseGenerator.Generator(tempFilePath).SaveToFile();
+            HttpResponseExceptionFilterGenerator.Generator(tempFilePath, projectName).SaveToFile();
+            RequestContextLoggingMiddlewareGenerator.Generator(tempFilePath, projectName).SaveToFile();
+            PageResponseGenerator.Generator(tempFilePath, projectName).SaveToFile();
             CreateStaticFiles.Generate(tempFilePath, projectName, projectDescription);
-            StringUtilsGenerator.Generator(tempFilePath).SaveToFile();
-            CustomExceptionGenerator.Generator(tempFilePath).SaveToFile();
-            ApigenOperationsGenerator.Generator(tempFilePath).SaveToFile();
+            StringUtilsGenerator.Generator(tempFilePath, projectName).SaveToFile();
+            CustomExceptionGenerator.Generator(tempFilePath, projectName).SaveToFile();
+            ApigenOperationsGenerator.Generator(tempFilePath, projectName).SaveToFile();
 
             Log.Debug($"...........................................................");
             //6. Copy OpenApi and Save

@@ -22,8 +22,10 @@ namespace Generator.Core
         public static void Generator(OpenApiDocument doc, string tempFilePath, bool save = true)
         {
             Log.Debug($"Generating ~ Services");
-            IBaseServiceGenerator(tempFilePath).SaveToFile();
-            BaseServiceGenerator(tempFilePath).SaveToFile();
+            string projectName = OpenApiUtils.GetProjectName(doc);
+            string projectNs = $"{projectName}.Domain.Services";
+            IBaseServiceGenerator(tempFilePath, projectName).SaveToFile();
+            BaseServiceGenerator(tempFilePath, projectName).SaveToFile();
 
             var apigenModels = OpenApiUtils.GetApiGenModelsOrDefault(doc);
 
@@ -31,19 +33,19 @@ namespace Generator.Core
             {
                 foreach (var entity in apigenModels)
                 {
-                    GenerateService(entity, ns, tempFilePath).SaveToFile(save);
+                    GenerateService(entity, projectNs, tempFilePath, projectName).SaveToFile(save);
                 }
             }
         }
 
         public static (ICodegenOutputFile, string?) GenerateService(KeyValuePair<string, IOpenApiAny> entity,
-            string ns, string tempFilePath)
+            string ns, string tempFilePath, string projectName = "")
         {
             string cl = $"{entity.Key.Pascalize()}";
             var ctx = new CodegenContext();
             var w = ctx[$"{cl}Service.cs"];
-            w.WriteLine("using Entities;");
-            w.WriteLine("using Repositories;\n");
+            w.WriteLine($"using {projectName}.Infrastructure.Entities;");
+            w.WriteLine($"using {projectName}.Infrastructure.Repositories;\n");
             w.WithCurlyBraces($"namespace {ns}", () =>
             {
                 w.WithCurlyBraces($"public class {cl}Service : BaseService<{cl}>", () =>
@@ -66,7 +68,7 @@ namespace Generator.Core
         /// </summary>
         /// <param name="tempFilePath"></param>
         /// <returns></returns>
-        private static (ICodegenOutputFile, string?) BaseServiceGenerator(string tempFilePath)
+        private static (ICodegenOutputFile, string?) BaseServiceGenerator(string tempFilePath, string projectName)
         {
             var ctx = new CodegenContext();
             var w = ctx[$"BaseService.cs"];
@@ -74,12 +76,12 @@ namespace Generator.Core
             w.WriteLine($$"""
             using Microsoft.EntityFrameworkCore;
             using Microsoft.EntityFrameworkCore.DynamicLinq;
-            using Repositories;
+            using {{projectName}}.Infrastructure.Repositories;
             using System.ComponentModel.DataAnnotations;
             using System.Linq.Dynamic.Core;
-            using Utils;
+            using {{projectName}}.Domain.Utils;
 
-            namespace Services
+            namespace {{projectName}}.Domain.Services
             {
                 public class BaseService<T>(IBaseRepository<T> repository) : IBaseService<T> where T : class
                 {
@@ -148,15 +150,15 @@ namespace Generator.Core
 
         }
 
-        private static (ICodegenOutputFile, string?) IBaseServiceGenerator(string tempFilePath)
+        private static (ICodegenOutputFile, string?) IBaseServiceGenerator(string tempFilePath, string projectName)
         {
             var ctx = new CodegenContext();
             var w = ctx[$"IBaseService.cs"];
 
             w.WriteLine($$"""
-            using Utils;
+            using {{projectName}}.Domain.Utils;
 
-            namespace Services
+            namespace {{projectName}}.Domain.Services
             {
                 public interface IBaseService<T> where T : class
                 {

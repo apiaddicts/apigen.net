@@ -94,10 +94,21 @@ namespace Generator.Utils
             };
         }
 
+        public static string GetProjectName(OpenApiDocument doc)
+        {
+            var title = doc?.Info?.Title;
+            if (string.IsNullOrWhiteSpace(title)) return "Api";
+            return string.Concat(
+                title.Split([' ', '-', '_'])
+                    .Where(s => s.Length > 0)
+                    .Select(s => char.ToUpperInvariant(s[0]) + s[1..])
+            );
+        }
+
         public static DatabaseType GetDatabaseType(OpenApiDocument doc)
         {
-            if (doc?.Extensions != null &&
-                doc.Extensions.TryGetValue("x-apigen-project", out var projectExt) &&
+            if (doc?.Extensions is { Count: > 0 } extensions &&
+                extensions.TryGetValue("x-apigen-project", out var projectExt) &&
                 projectExt is OpenApiObject projectObj &&
                 projectObj.TryGetValue("data-driver", out var driverVal) &&
                 driverVal is OpenApiString driverStr)

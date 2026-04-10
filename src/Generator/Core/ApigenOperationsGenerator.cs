@@ -5,22 +5,20 @@ namespace Generator.Core
 {
     public static class ApigenOperationsGenerator
     {
-        public static (ICodegenOutputFile, string?) Generator(string tempFilePath)
+        public static (ICodegenOutputFile, string?) Generator(string tempFilePath, string projectName)
         {
-            string ns = "Utils";
             string cl = "ApigenOperations";
             Log.Debug("Adding ~ {Class}", cl);
 
             var ctx = new CodegenContext();
             var w = ctx[$"{cl}.cs"];
 
+            w.WriteLine("using Microsoft.EntityFrameworkCore;");
+            w.WriteLine("using Serilog;");
+            w.WriteLine("using System.Linq.Dynamic.Core;");
+            w.WriteLine("using System.Text.RegularExpressions;");
+            w.WriteLine($"\nnamespace {projectName}.Domain.Utils");
             w.WriteLine("""
-            using Microsoft.EntityFrameworkCore;
-            using Serilog;
-            using System.Linq.Dynamic.Core;
-            using System.Text.RegularExpressions;
-
-            namespace Utils
             {
                 public static partial class ApigenOperations
                 {
@@ -138,7 +136,7 @@ namespace Generator.Core
             }
             """);
 
-            return (w, $"{tempFilePath}/src/Domain/{ns}/");
+            return (w, $"{tempFilePath}/src/Domain/Utils/");
         }
 
 

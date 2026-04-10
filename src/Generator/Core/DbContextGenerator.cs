@@ -24,9 +24,10 @@ namespace Generator.Core
             var w = ctx[$"{cl}.cs"];
 
             var apigenModels = OpenApiUtils.GetApiGenModelsOrDefault(doc);
-            string ns = "Context";
+            string projectName = OpenApiUtils.GetProjectName(doc);
+            string ns = $"{projectName}.Infrastructure.Context";
             if (apigenModels != null)
-                w.WriteLine("using Entities;");
+                w.WriteLine($"using {projectName}.Infrastructure.Entities;");
             w.WriteLine("using Microsoft.EntityFrameworkCore;\n");
             w.WithCurlyBraces($"namespace {ns}", () =>
             {

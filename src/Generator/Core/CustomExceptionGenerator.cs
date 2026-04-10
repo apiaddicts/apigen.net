@@ -7,7 +7,7 @@ namespace Generator.Core
     {
         private static readonly string cl = $"CustomException";
 
-        public static (ICodegenOutputFile, string?) Generator(string tempFilePath)
+        public static (ICodegenOutputFile, string?) Generator(string tempFilePath, string projectName)
         {
             Log.Debug("Adding ~ {Class}", cl);
 
@@ -15,7 +15,7 @@ namespace Generator.Core
             var w = ctx[$"{cl}.cs"];
 
             w.WriteLine($$"""
-            namespace Utils
+            namespace {{projectName}}.Domain.Utils
             {
                 public class CustomException : Exception
                 {

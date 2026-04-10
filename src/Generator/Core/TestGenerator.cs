@@ -23,18 +23,19 @@ namespace Generator.Core
         {
             Log.Debug($"Generating ~ Tests");
             var tags = TagsByDocPath(doc);
+            string projectName = OpenApiUtils.GetProjectName(doc);
 
             foreach (var tag in tags)
             {
-                GenerateControllerTest(tag, doc, tempFilePath).SaveToFile();
+                GenerateControllerTest(tag, doc, tempFilePath, projectName).SaveToFile();
             }
 
-            GenerateBaseServiceTest(tempFilePath).SaveToFile();
-            GenerateHttpResponseExceptionFilterTest(tempFilePath).SaveToFile();
+            GenerateBaseServiceTest(tempFilePath, projectName).SaveToFile();
+            GenerateHttpResponseExceptionFilterTest(tempFilePath, projectName).SaveToFile();
         }
 
 
-        private static (ICodegenOutputFile, string?) GenerateControllerTest((OpenApiTag Tag, OpenApiString? Entity) tag, OpenApiDocument doc, string tempFilePath)
+        private static (ICodegenOutputFile, string?) GenerateControllerTest((OpenApiTag Tag, OpenApiString? Entity) tag, OpenApiDocument doc, string tempFilePath, string projectName)
         {
             var className = GetClassName(tag);
             var ctx = new CodegenContext();
@@ -43,19 +44,19 @@ namespace Generator.Core
             if (tag.Entity == null) return (writer, null);
 
             var entity = GetEntityName(tag);
-            WriteUsings(writer);
+            WriteUsings(writer, projectName);
 
-            writer.WithCurlyBraces($"namespace Test.Api.Helpers", () =>
+            writer.WithCurlyBraces($"namespace {projectName}.Domain.Tests.Helpers", () =>
             {
                 writer.WithCurlyBraces($"public class {className}ControllerTest", () =>
                 {
                     DefineClassMembers(writer, className, entity);
                     InitializeClassMembersInConstructor(writer, className, entity);
-                    GenerateTestMethods(writer, doc, tag, entity);
+                    GenerateTestMethods(writer, doc, tag, entity, projectName);
                 });
             });
 
-            return (writer, $"{tempFilePath}/test/UnitTest/Api/Controllers/");
+            return (writer, $"{tempFilePath}/test/Api/Controllers/");
         }
 
         private static string GetClassName((OpenApiTag Tag, OpenApiString? Entity) tag)
@@ -68,16 +69,16 @@ namespace Generator.Core
             return tag.Entity!.Value.Pascalize();
         }
 
-        private static void WriteUsings(ICodegenOutputFile writer)
+        private static void WriteUsings(ICodegenOutputFile writer, string projectName)
         {
             writer.WriteLine("using AutoMapper;");
-            writer.WriteLine("using Context;");
-            writer.WriteLine("using Models;");
-            writer.WriteLine("using Controllers;");
+            writer.WriteLine($"using {projectName}.Infrastructure.Context;");
+            writer.WriteLine($"using {projectName}.Domain.Models;");
+            writer.WriteLine($"using {projectName}.Api.Controllers;");
             writer.WriteLine("using Microsoft.AspNetCore.Mvc;");
             writer.WriteLine("using Moq;");
-            writer.WriteLine("using Repositories;");
-            writer.WriteLine("using Services;");
+            writer.WriteLine($"using {projectName}.Infrastructure.Repositories;");
+            writer.WriteLine($"using {projectName}.Domain.Services;");
             writer.WriteLine("using Xunit;\n");
         }
 
@@ -102,7 +103,7 @@ namespace Generator.Core
             });
         }
 
-        private static void GenerateTestMethods(ICodegenOutputFile writer, OpenApiDocument doc, (OpenApiTag Tag, OpenApiString? Entity) tag, string entity)
+        private static void GenerateTestMethods(ICodegenOutputFile writer, OpenApiDocument doc, (OpenApiTag Tag, OpenApiString? Entity) tag, string entity, string projectName)
         {
             foreach (var path in doc.Paths)
             {
@@ -115,7 +116,7 @@ namespace Generator.Core
                         writer.WithCurlyBraces($"public async Task {functionName}Test()", () =>
                         {
                             var resultType = DetermineResultType(operation);
-                            SetupMocksForOperation(writer, operation, entity, resultType);
+                            SetupMocksForOperation(writer, operation, entity, resultType, projectName);
                             ExecuteTestMethod(writer, functionName, resultType, operation);
                         });
                     }
@@ -128,13 +129,13 @@ namespace Generator.Core
             return operation.Value.Responses.FirstOrDefault().Key.Equals("204") ? "StatusCodeResult" : "ObjectResult";
         }
 
-        private static void SetupMocksForOperation(ICodegenOutputFile writer, KeyValuePair<OperationType, OpenApiOperation> operation, string entity, string resultType)
+        private static void SetupMocksForOperation(ICodegenOutputFile writer, KeyValuePair<OperationType, OpenApiOperation> operation, string entity, string resultType, string projectName)
         {
             if (resultType == "StatusCodeResult")
             {
                 var op = operation.Key.Equals(OperationType.Patch) ? OperationType.Put : operation.Key;
-                writer.WriteLine($"service.Setup(x => x.{op}(It.IsAny<Entities.{entity}>())).Returns(It.IsAny<Entities.{entity}>());");
-                writer.WriteLine($"repository.Setup(x => x.{op}(It.IsAny<Entities.{entity}>())).Returns(It.IsAny<Entities.{entity}>());");
+                writer.WriteLine($"service.Setup(x => x.{op}(It.IsAny<{projectName}.Infrastructure.Entities.{entity}>())).Returns(It.IsAny<{projectName}.Infrastructure.Entities.{entity}>());");
+                writer.WriteLine($"repository.Setup(x => x.{op}(It.IsAny<{projectName}.Infrastructure.Entities.{entity}>())).Returns(It.IsAny<{projectName}.Infrastructure.Entities.{entity}>());");
             }
         }
 
@@ -226,20 +227,20 @@ namespace Generator.Core
             return "It.IsAny<object>()";
         }
 
-        private static (ICodegenOutputFile, string?) GenerateBaseServiceTest(string tempFilePath)
+        private static (ICodegenOutputFile, string?) GenerateBaseServiceTest(string tempFilePath, string projectName)
         {
             var ctx = new CodegenContext();
             var w = ctx[$"BaseServiceTest.cs"];
 
             w.WriteLine($$"""
-            using Context;
+            using {{projectName}}.Infrastructure.Context;
             using Moq;
-            using Repositories;
-            using Services;
+            using {{projectName}}.Infrastructure.Repositories;
+            using {{projectName}}.Domain.Services;
             using Xunit;
             using MockQueryable;
 
-            namespace Test.Domain.Services
+            namespace {{projectName}}.Domain.Tests.Services
             {
                 public record Pojo(int Id, string Name, string Surname);
                 public class BaseServiceTest
@@ -299,16 +300,16 @@ namespace Generator.Core
             }
             """);
 
-            return (w, $"{tempFilePath}/test/UnitTest/Domain/Services/");
+            return (w, $"{tempFilePath}/test/Domain/Services/");
         }
 
-        private static (ICodegenOutputFile, string?) GenerateHttpResponseExceptionFilterTest(string tempFilePath)
+        private static (ICodegenOutputFile, string?) GenerateHttpResponseExceptionFilterTest(string tempFilePath, string projectName)
         {
             var ctx = new CodegenContext();
             var w = ctx[$"HttpResponseExceptionFilterTest.cs"];
 
             w.WriteLine($$"""
-            using Helpers;
+            using {{projectName}}.Api.Helpers;
             using Microsoft.AspNetCore.Http;
             using Microsoft.AspNetCore.Mvc;
             using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -318,7 +319,7 @@ namespace Generator.Core
             using Moq;
             using Xunit;
 
-            namespace Test.Api.Helpers
+            namespace {{projectName}}.Domain.Tests.Helpers
             {
                 public class HttpResponseExceptionFilterTest
                 {
@@ -351,7 +352,7 @@ namespace Generator.Core
             }
             """);
 
-            return (w, $"{tempFilePath}/test/UnitTest/Domain/Helpers/");
+            return (w, $"{tempFilePath}/test/Domain/Helpers/");
         }
 
     }

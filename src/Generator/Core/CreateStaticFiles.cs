@@ -198,12 +198,16 @@ namespace Generator.Core
             var w = ctx[$"Dockerfile"];
 
             w.WriteLine($$"""
-            FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine3.20
+            FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+            WORKDIR /src
+            COPY . .
+            RUN dotnet publish src/Api/{{projectName}}.Api.csproj -c Release -o /app/publish
 
-            COPY build/ .
-
+            FROM mcr.microsoft.com/dotnet/aspnet:10.0
+            WORKDIR /app
+            COPY --from=build /app/publish .
             EXPOSE 8080
-            ENTRYPOINT ["dotnet", "{{projectName.Dehumanize()}}.Api.dll"]
+            ENTRYPOINT ["dotnet", "{{projectName}}.Api.dll"]
             """);
 
             return (w, $"{tempFilePath}/");
@@ -215,20 +219,20 @@ namespace Generator.Core
             var w = ctx[$"README.md"];
 
             w.WriteLine($$"""
-            # 🍩 {{projectName.Dehumanize()}} ~  ![.Net](https://img.shields.io/badge/8.0-5C2D91?style=flat&logo=.net&logoColor=white) ![OpenApi](https://img.shields.io/badge/OpenApi-6BA539?style=flat&logo=openapiinitiative&logoColor=white) 
-            
+            # 🍩 {{projectName}} ~  ![.Net](https://img.shields.io/badge/10.0-5C2D91?style=flat&logo=.net&logoColor=white) ![OpenApi](https://img.shields.io/badge/OpenApi-6BA539?style=flat&logo=openapiinitiative&logoColor=white) 
+
             {{projectDescription}}
 
             # 🖥️ Reqs
-            - [Visual Studio 2022](https://visualstudio.microsoft.com/es/vs/)
-            - [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+            - [Visual Studio](https://visualstudio.microsoft.com/es/vs/)
+            - [.NET 10.0](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
             - [Docker](https://www.docker.com/products/docker-desktop/)
 
             # ▶️ How to start
 
             ## `cli` dotnet
             ```
-            dotnet run --project ./src/Api/Api.csproj
+            dotnet run --project ./src/Api/{{projectName}}.Api.csproj
             ```
 
             ## `build` dotnet
@@ -237,10 +241,9 @@ namespace Generator.Core
             ```
 
             ## 🐋 `docker`
-            #### ⚠️ *This step requires the build step*
             ```
-            docker build -t template .
-            docker run -d -p 8080:8080 --name template.api template
+            docker build -t {{projectName.ToLower()}} .
+            docker run -d -p 8080:8080 -e DATABASE_URL=<DATABASE_URL> --name {{projectName.ToLower()}}.api {{projectName.ToLower()}}
             ```
 
             # ⚙️ Envs
@@ -248,7 +251,7 @@ namespace Generator.Core
             | ENV                    | ALLOWED_VALUES                   | DESCRIPTION                                | EXAMPLE                                        |
             |------------------------|----------------------------------|--------------------------------------------|------------------------------------------------|
             | ASPNETCORE_ENVIRONMENT | Development, Staging, Production | Asp.Net profile                            | Development                                    |
-            | DATABASE_URL           |                                  | Connection data of the PostgreSQL database | User Id=<>;Password=<>;Data Source=<>:1521/<>; |
+            | DATABASE_URL           |                                  | Database connection string                 | Host=localhost;Database=mydb;Username=u;Password=p |
             """);
 
             return (w, $"{tempFilePath}/");

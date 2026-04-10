@@ -8,7 +8,7 @@ namespace Generator.Core
     {
         private readonly static string cl = $"HttpResponseExceptionFilter";
 
-        public static (ICodegenOutputFile, string?) Generator(string tempFilePath)
+        public static (ICodegenOutputFile, string?) Generator(string tempFilePath, string projectName)
         {
             Log.Debug("Adding ~ {Class}", cl);
 
@@ -19,9 +19,9 @@ namespace Generator.Core
             using Microsoft.AspNetCore.Mvc;
             using Microsoft.AspNetCore.Mvc.Filters;
             using Serilog;
-            using Utils;
+            using {{projectName}}.Domain.Utils;
 
-            namespace Helpers
+            namespace {{projectName}}.Api.Helpers
             {
                 public class HttpResponseExceptionFilter : IActionFilter
                 {
