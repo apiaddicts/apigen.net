@@ -90,6 +90,15 @@ namespace Generator.Core
                     public virtual async Task<T> Post(T obj)
                     {
                         var result = await dbSet.AddAsync(obj);
+                        foreach (var nav in context.Entry(result.Entity).References)
+                        {
+                            if (nav.CurrentValue != null)
+                            {
+                                var navEntry = context.Entry(nav.CurrentValue);
+                                if (navEntry.IsKeySet)
+                                    navEntry.State = EntityState.Unchanged;
+                            }
+                        }
                         await context.SaveChangesAsync();
                         return result.Entity;
                     }
