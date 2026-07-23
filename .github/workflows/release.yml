@@ -1,0 +1,76 @@
+name: release
+
+# Builds the self-contained CLI for every platform on its native runner and
+# publishes them as assets of a GitHub Release when a version tag is pushed.
+#
+#   git tag 1.0.2 && git push origin 1.0.2
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch: {}   # allow manual runs from the Actions tab
+
+permissions:
+  contents: write         # required to create the release and upload assets
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            profile: FolderProfile
+            rid: win-x64
+            asset: apigen-dotnet-cli-win-x64.exe
+          - os: ubuntu-latest
+            profile: Linux
+            rid: linux-x64
+            asset: apigen-dotnet-cli-linux-x64
+          - os: ubuntu-latest
+            profile: LinuxMusl
+            rid: linux-musl-x64
+            asset: apigen-dotnet-cli-linux-musl-x64
+          - os: macos-latest
+            profile: MacArm64
+            rid: osx-arm64
+            asset: apigen-dotnet-cli-osx-arm64
+          - os: macos-13
+            profile: MacIntel
+            rid: osx-x64
+            asset: apigen-dotnet-cli-osx-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish ${{ matrix.rid }}
+        shell: bash
+        run: dotnet publish src/Command/Command.csproj -p:PublishProfile=${{ matrix.profile }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: src/Command/bin/Release/net10.0/publish/${{ matrix.rid }}/${{ matrix.asset }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

@@ -8,19 +8,6 @@
     <AssemblyName>apigen</AssemblyName>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <PackAsTool>true</PackAsTool>
-    <ToolCommandName>apigen</ToolCommandName>
-    <PackageId>ApiAddicts.Apigen</PackageId>
-    <Description>CLI tool to generate .NET code from OpenAPI specifications.</Description>
-    <Authors>ApiAddicts</Authors>
-    <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/apiaddicts/apigen.net</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/apiaddicts/apigen.net</PackageProjectUrl>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>openapi;codegen;apigen;apiaddicts;cli</PackageTags>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>embedded</DebugType>
   </PropertyGroup>
@@ -44,7 +31,6 @@
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToPublishDirectory>Never</CopyToPublishDirectory>
       </None>
-      <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 
 </Project>
