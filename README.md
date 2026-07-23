@@ -172,20 +172,24 @@ Profiles live in `src/Command/Properties/PublishProfiles/`:
 | `Linux` | linux-x64 | `apigen-dotnet-cli-linux-x64` |
 | `LinuxMusl` | linux-musl-x64 | `apigen-dotnet-cli-linux-musl-x64` |
 | `MacArm64` | osx-arm64 | `apigen-dotnet-cli-osx-arm64` |
-| `MacIntel` | osx-x64 | `apigen-dotnet-cli-osx-x64` |
+| `MacIntel` | osx-x64 | `apigen-dotnet-cli-osx-x64` (not published — see below) |
 
 > **glibc vs musl:** `Linux` (`linux-x64`) targets **glibc** distros (Debian,
 > Ubuntu, RHEL…). `LinuxMusl` (`linux-musl-x64`) targets **musl** distros —
 > **Alpine** and Alpine-based container images. They are not interchangeable: a
 > glibc binary won't run on Alpine and vice versa.
+>
+> **Intel Macs (`osx-x64`)** are not part of the released binaries or the install
+> script. The `MacIntel` profile still exists if you need to build one manually
+> (`-p:PublishProfile=MacIntel`).
 
 ### Build all platforms at once
 
-`scripts/build-all.sh` compiles win-x64, linux-x64, osx-arm64 and osx-x64 and
+`scripts/build-all.sh` compiles win-x64, linux-x64 and osx-arm64 and
 copies the binaries into a local `dist/` folder:
 
 ```bash
-./scripts/build-all.sh              # all four -> dist/
+./scripts/build-all.sh              # all three -> dist/
 ./scripts/build-all.sh linux-x64    # a single one
                                     # (win-x64 | linux-x64 | linux-musl-x64 | osx-arm64 | osx-x64)
 ```
@@ -196,11 +200,10 @@ Result in `dist/`:
 apigen-dotnet-cli-win-x64.exe   (~29 MB)
 apigen-dotnet-cli-linux-x64     (~18 MB)
 apigen-dotnet-cli-osx-arm64     (~16 MB)
-apigen-dotnet-cli-osx-x64       (~17 MB)
 ```
 
-> `linux-musl-x64` (Alpine) is not part of `all`; build it on demand with
-> `-p:PublishProfile=LinuxMusl`.
+> `linux-musl-x64` (Alpine) and `osx-x64` (Intel Mac) are not part of `all`; build
+> them on demand with `-p:PublishProfile=LinuxMusl` / `MacIntel`.
 
 > Cross-compiling downloads each RID's runtime pack on first use (needs internet).
 

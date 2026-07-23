@@ -24,7 +24,7 @@ case "$os" in
     Darwin)
         case "$arch" in
             arm64|aarch64) platform="osx-arm64" ;;
-            x86_64)        platform="osx-x64" ;;
+            x86_64) echo "Intel Macs (osx-x64) are not supported. Use an Apple Silicon Mac, or build from source." >&2; exit 1 ;;
             *) echo "Unsupported macOS architecture: $arch" >&2; exit 1 ;;
         esac
         ;;

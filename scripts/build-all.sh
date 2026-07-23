@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Builds the apigen CLI for the desktop platforms (win-x64, linux-x64,
-# osx-arm64, osx-x64) and drops the self-contained binaries into a local dist/ folder.
+# osx-arm64) and drops the self-contained binaries into a local dist/ folder.
 #
 # Usage:
-#   ./build-all.sh                 # builds win-x64, linux-x64, osx-arm64, osx-x64
+#   ./build-all.sh                 # builds win-x64, linux-x64, osx-arm64
 #   ./build-all.sh win-x64         # builds a single one
 #                                  # (win-x64 | linux-x64 | linux-musl-x64 | osx-arm64 | osx-x64)
 #
@@ -56,7 +56,6 @@ case "$TARGET" in
         build "FolderProfile" "win-x64"   "apigen-dotnet-cli-win-x64.exe"
         build "Linux"         "linux-x64" "apigen-dotnet-cli-linux-x64"
         build "MacArm64"      "osx-arm64" "apigen-dotnet-cli-osx-arm64"
-        build "MacIntel"      "osx-x64"   "apigen-dotnet-cli-osx-x64"
         ;;
     *)
         echo "ERROR: unknown target '$TARGET'." >&2

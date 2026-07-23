@@ -36,10 +36,6 @@ jobs:
             profile: MacArm64
             rid: osx-arm64
             asset: apigen-dotnet-cli-osx-arm64
-          - os: macos-13
-            profile: MacIntel
-            rid: osx-x64
-            asset: apigen-dotnet-cli-osx-x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
